@@ -1,11 +1,10 @@
 import {
-  LayoutDashboard,
   Menu,
+  PackageCheck,
+  PackageOpen,
   QrCode,
-  ScanLine,
   ShieldCheck,
   Truck,
-  UsersRound,
   Waypoints,
 } from "lucide-react";
 import Link from "next/link";
@@ -13,15 +12,40 @@ import Link from "next/link";
 import { NavigationLink } from "./navigation-link";
 
 const links = [
-  { href: "/dashboard", label: "לוח בקרה", icon: LayoutDashboard },
-  { href: "/memberships", label: "הרשאות", icon: UsersRound },
-  { href: "/scan-package", label: "סריקת חבילה", icon: ScanLine },
-  { href: "/transport", label: "הובלה", icon: Truck },
+  { href: "/packing", label: "אריזת חבילות", icon: PackageCheck },
+  { href: "/transport", label: "הובלת חבילות", icon: Truck },
+  { href: "/receiving", label: "קבלת חבילות", icon: PackageOpen },
+  { href: "/pickup", label: "איסוף חבילות", icon: PackageCheck },
 ];
+
+const managementLinks = [
+  { href: "/packing", label: "סטטוס חבילות משוייכות", icon: PackageCheck },
+  { href: "/memberships", label: "הצגת בכירים", icon: Waypoints },
+  { href: "/logistics", label: "הצגת לוגיסטיקה", icon: Waypoints },
+];
+
+function localGreeting() {
+  const hour = Number(
+    new Intl.DateTimeFormat("he-IL", {
+      hour: "2-digit",
+      hourCycle: "h23",
+      timeZone: "Asia/Jerusalem",
+    }).format(new Date()),
+  );
+
+  if (hour < 12) return "בוקר טוב משתמש";
+  if (hour < 18) return "צהריים טובים משתמש";
+  return "ערב טוב משתמש";
+}
 
 function Navigation() {
   return <>
+    <span className="nav-section-label">תהליך העברה</span>
     {links.map(({ href, label, icon: Icon }) => (
+      <NavigationLink href={href} key={href}><Icon aria-hidden="true" /><span>{label}</span></NavigationLink>
+    ))}
+    <span className="nav-section-label">ניהול ובקרה</span>
+    {managementLinks.map(({ href, label, icon: Icon }) => (
       <NavigationLink href={href} key={href}><Icon aria-hidden="true" /><span>{label}</span></NavigationLink>
     ))}
     <span className="nav-section-label">פיתוח / הדגמה</span>
@@ -31,27 +55,21 @@ function Navigation() {
 
 export function AppShell({
   children,
-  userName,
 }: {
   children: React.ReactNode;
-  userName: string;
 }) {
   return (
     <div className="app-frame">
       <aside className="sidebar">
         <Link className="brand" href="/dashboard">
           <span className="brand-mark"><Waypoints aria-hidden="true" /></span>
-          <span>מעבר דרומה</span>
+          <span className="brand-copy"><strong>מעבר דרומה</strong><small>{localGreeting()}</small></span>
         </Link>
         <nav className="side-nav" aria-label="ניווט במערכת">
           <Navigation />
         </nav>
         <div className="sidebar-footer">
           <span className="secure-chip"><ShieldCheck aria-hidden="true" /> חיבור מאובטח</span>
-          <div className="sidebar-user">
-            <span className="avatar">מ</span>
-            <span><strong>{userName}</strong><small>מצב מקומי</small></span>
-          </div>
         </div>
       </aside>
       <div className="workspace">

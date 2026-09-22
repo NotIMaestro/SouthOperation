@@ -200,7 +200,7 @@ export default function TransportPage() {
   return (
     <main className="page-shell">
       <PageHeader
-        title="הובלה"
+        title="הובלת חבילות"
         description="תכנון, מעקב וניהול משימות שינוע במערכת"
         action={
           <button aria-label="יצירת משימת הובלה" className="button primary" onClick={() => setIsCreateOpen(true)} type="button">

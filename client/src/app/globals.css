@@ -39,6 +39,10 @@ svg { width: 1.15rem; height: 1.15rem; stroke-width: 1.8; }
   letter-spacing: -0.02em;
 }
 
+.brand-copy { display: grid; gap: 0.18rem; }
+.brand-copy strong, .brand-copy small { display: block; }
+.brand-copy small { color: rgba(255,255,255,0.62); font-size: 0.72rem; font-weight: 500; }
+
 .brand-mark {
   display: grid;
   width: 2.45rem;
