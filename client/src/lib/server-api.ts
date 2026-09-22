@@ -9,6 +9,12 @@ import {
 } from "@south-operation/server/packing";
 import { listRooms } from "@south-operation/server/rooms";
 import { listReports } from "@south-operation/server/reports";
+import {
+  listPackingUnitsWithStage as listPackingUnitsWithStageSvc,
+  listTransportsForGroup as listTransportsForGroupSvc,
+  listWaitingTransportsForAssignment as listWaitingTransportsForAssignmentSvc,
+} from "@south-operation/server/transports";
+import type { TransportStatus } from "@south-operation/server/schema";
 
 import { getActor } from "@/lib/actor";
 
@@ -34,6 +40,8 @@ export type RoomListItem = Awaited<ReturnType<typeof listRooms>>[number];
 export type PackingUnit = Awaited<ReturnType<typeof listPackingUnitsSvc>>[number];
 export type PackableItem = Awaited<ReturnType<typeof listPackableItemsSvc>>[number];
 export type MappingReport = Awaited<ReturnType<typeof listReports>>[number];
+export type Transport = Awaited<ReturnType<typeof listTransportsForGroupSvc>>[number];
+export type PackingUnitStage = Awaited<ReturnType<typeof listPackingUnitsWithStageSvc>>[number];
 
 export function listGroups() {
   return attempt(async () => listVisibleGroups(await getActor()));
@@ -84,4 +92,28 @@ export function listReportsForGroup(groupId: string) {
 
 export async function resolveInvitedUser(subject: string) {
   return findInvitedUserBySubject(subject);
+}
+
+export function listTransportsForGroup(groupId: string, status?: TransportStatus) {
+  return attempt(async () => {
+    const actor = await getActor();
+    await requireGroupAccess(actor, groupId);
+    return listTransportsForGroupSvc(groupId, status);
+  });
+}
+
+export function listWaitingTransportsForAssignment(groupId: string) {
+  return attempt(async () => {
+    const actor = await getActor();
+    await requireGroupAccess(actor, groupId);
+    return listWaitingTransportsForAssignmentSvc(groupId);
+  });
+}
+
+export function listPackingUnitsWithStage(groupId: string) {
+  return attempt(async () => {
+    const actor = await getActor();
+    await requireGroupAccess(actor, groupId);
+    return listPackingUnitsWithStageSvc(groupId);
+  });
 }

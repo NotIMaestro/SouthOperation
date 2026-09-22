@@ -71,3 +71,36 @@ export const closePackingUnitSchema = z
     destinationRoom: z.string().trim().min(1).max(160),
   })
   .strict();
+
+export const createTransportSchema = z
+  .object({
+    createdByName: z.string().trim().min(1).max(160),
+    sourceCity: z.string().trim().min(1).max(160),
+    sourceUnit: z.string().trim().min(1).max(160),
+    sourceBuilding: z.string().trim().min(1).max(160),
+    sourceRoom: z.string().trim().min(1).max(160),
+    destinationCity: z.string().trim().min(1).max(160),
+    destinationUnit: z.string().trim().min(1).max(160),
+    destinationBuilding: z.string().trim().min(1).max(160),
+    destinationRoom: z.string().trim().min(1).max(160),
+    packageCount: z.number().int().positive().max(10_000),
+    packageSummary: z.string().trim().max(2000).optional(),
+    scheduledAt: z.iso.datetime().transform((value) => new Date(value)).optional(),
+  })
+  .strict();
+
+export const updateTransportStatusSchema = z
+  .object({
+    status: z.enum(["transit", "arrived"]),
+    vehicleType: z.string().trim().min(1).max(60).optional(),
+    vehicleNumber: z.string().trim().min(1).max(60).optional(),
+  })
+  .strict();
+
+export const assignPackingUnitTransportSchema = z.object({ transportId: z.uuid() }).strict();
+
+export const packingUnitNumberSchema = z
+  .string()
+  .trim()
+  .regex(/^[0-9]{1,5}$/, "יש להזין מספר יחידת אריזה תקין.")
+  .transform((value) => value.padStart(5, "0"));

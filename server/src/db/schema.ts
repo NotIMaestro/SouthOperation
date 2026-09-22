@@ -70,6 +70,12 @@ export const packingUnitStatus = pgEnum("packing_unit_status", [
   "closed",
 ]);
 
+export const transportStatus = pgEnum("transport_status", [
+  "waiting",
+  "transit",
+  "arrived",
+]);
+
 export const users = pgTable(
   "users",
   {
@@ -321,6 +327,53 @@ export const sequenceCounters = pgTable("sequence_counters", {
   value: integer("value").notNull().default(0),
 });
 
+export const transports = pgTable(
+  "transports",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    groupId: uuid("group_id")
+      .notNull()
+      .references(() => groups.id, { onDelete: "restrict" }),
+    transportNumber: varchar("transport_number", { length: 10 }).notNull(),
+    status: transportStatus("status").notNull().default("waiting"),
+    createdByUserId: uuid("created_by_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    createdByName: varchar("created_by_name", { length: 160 }).notNull(),
+    sourceCity: varchar("source_city", { length: 160 }).notNull(),
+    sourceUnit: varchar("source_unit", { length: 160 }).notNull(),
+    sourceBuilding: varchar("source_building", { length: 160 }).notNull(),
+    sourceRoom: varchar("source_room", { length: 160 }).notNull(),
+    destinationCity: varchar("destination_city", { length: 160 }).notNull(),
+    destinationUnit: varchar("destination_unit", { length: 160 }).notNull(),
+    destinationBuilding: varchar("destination_building", { length: 160 }).notNull(),
+    destinationRoom: varchar("destination_room", { length: 160 }).notNull(),
+    packageCount: integer("package_count").notNull().default(0),
+    packageSummary: text("package_summary"),
+    vehicleType: varchar("vehicle_type", { length: 60 }),
+    vehicleNumber: varchar("vehicle_number", { length: 60 }),
+    scheduledAt: timestamp("scheduled_at", { withTimezone: true }),
+    transitAt: timestamp("transit_at", { withTimezone: true }),
+    arrivedAt: timestamp("arrived_at", { withTimezone: true }),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("transports_transport_number_uidx").on(table.transportNumber),
+    index("transports_group_status_idx").on(table.groupId, table.status),
+    index("transports_group_archive_idx").on(table.groupId, table.archivedAt),
+    check(
+      "transports_status_check",
+      sql`(${table.status} = 'waiting' AND ${table.transitAt} IS NULL AND ${table.arrivedAt} IS NULL) OR (${table.status} = 'transit' AND ${table.transitAt} IS NOT NULL AND ${table.vehicleType} IS NOT NULL AND ${table.vehicleNumber} IS NOT NULL AND ${table.arrivedAt} IS NULL) OR (${table.status} = 'arrived' AND ${table.transitAt} IS NOT NULL AND ${table.arrivedAt} IS NOT NULL)`,
+    ),
+  ],
+);
+
 export const packingUnits = pgTable(
   "packing_units",
   {
@@ -334,6 +387,7 @@ export const packingUnits = pgTable(
     destinationBuilding: varchar("destination_building", { length: 160 }),
     destinationFloor: varchar("destination_floor", { length: 60 }),
     destinationRoom: varchar("destination_room", { length: 160 }),
+    transportId: uuid("transport_id").references(() => transports.id, { onDelete: "set null" }),
     createdBy: uuid("created_by")
       .notNull()
       .references(() => users.id, { onDelete: "restrict" }),
@@ -352,6 +406,7 @@ export const packingUnits = pgTable(
       .where(sql`${table.unitNumber} IS NOT NULL`),
     index("packing_units_room_archive_idx").on(table.roomId, table.archivedAt),
     index("packing_units_status_idx").on(table.status),
+    index("packing_units_transport_idx").on(table.transportId),
     check(
       "packing_units_status_check",
       sql`(${table.status} IN ('awaiting_packing', 'packing_in_progress') AND ${table.unitNumber} IS NULL AND ${table.closedAt} IS NULL) OR (${table.status} = 'closed' AND ${table.unitNumber} IS NOT NULL AND ${table.closedAt} IS NOT NULL AND ${table.destinationBuilding} IS NOT NULL AND ${table.destinationRoom} IS NOT NULL)`,
@@ -451,3 +506,4 @@ export type ReportStatus = (typeof reportStatus.enumValues)[number];
 export type RoomPackingStatus = (typeof roomPackingStatus.enumValues)[number];
 export type PackingUnitType = (typeof packingUnitType.enumValues)[number];
 export type PackingUnitStatus = (typeof packingUnitStatus.enumValues)[number];
+export type TransportStatus = (typeof transportStatus.enumValues)[number];

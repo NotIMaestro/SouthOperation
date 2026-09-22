@@ -2,18 +2,25 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Camera, ImageUp, Keyboard, ScanLine, Search, X } from "lucide-react";
-import { findPackageByPackageNumber, findPackageByQrToken } from "@/lib/packages/service";
-import { packageErrorMessage, packageNumberSchema, qrTokenSchema, type PackageRecord } from "@/lib/packages/types";
-import { decodeQrImage } from "@/lib/packages/qr";
-import { PackageCard } from "./package-card";
+
+import { decodeQrImage, parsePackingUnitQrValue } from "@/lib/qr";
+import { PackingUnitResultCard, type PackingUnitLookupResult } from "./packing-unit-result-card";
 import { CameraPreview } from "./camera-preview";
 
-export function ScanPackage() {
+async function fetchUnit(url: string): Promise<PackingUnitLookupResult | null> {
+  const response = await fetch(url);
+  if (response.status === 404) return null;
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(payload?.error?.message ?? "החיפוש נכשל.");
+  return payload.data as PackingUnitLookupResult;
+}
+
+export function ScanPackingUnit() {
   const [cameraOpen, setCameraOpen] = useState(false);
   const [number, setNumber] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [result, setResult] = useState<PackageRecord | null>(null);
+  const [result, setResult] = useState<PackingUnitLookupResult | null>(null);
   const input = useRef<HTMLInputElement>(null);
   const resultHeading = useRef<HTMLHeadingElement>(null);
   const operation = useRef(0);
@@ -33,25 +40,32 @@ export function ScanPackage() {
     setCameraOpen(false);
     setResult(null);
     setError("");
-    const parsed = (mode === "qr" ? qrTokenSchema : packageNumberSchema).safeParse(value);
-    if (!parsed.success) { setError(parsed.error.issues[0].message); return; }
+    let url: string;
+    if (mode === "qr") {
+      const id = parsePackingUnitQrValue(value);
+      if (!id) { setError("קוד ה־QR שנסרק אינו תווית יחידת אריזה תקינה."); return; }
+      url = `/api/v1/packing-units/${id}`;
+    } else {
+      if (!/^[0-9]{1,5}$/.test(value.trim())) { setError("יש להזין מספר יחידת אריזה תקין (עד 5 ספרות)."); return; }
+      url = `/api/v1/packing-units/lookup?unitNumber=${encodeURIComponent(value.trim())}`;
+    }
     inFlight.current = true;
     const id = ++operation.current;
     setBusy(true);
     try {
-      const record = await (mode === "qr" ? findPackageByQrToken(parsed.data) : findPackageByPackageNumber(parsed.data));
+      const unit = await fetchUnit(url);
       if (id !== operation.current) return;
-      if (record) setResult(record);
-      else setError("לא נמצאה חבילה. בדקו את התווית או את המספר. חבילות הדגמה שנוצרו זמינות רק בדפדפן שבו נוצרו.");
-    } catch (cause) { if (id === operation.current) setError(packageErrorMessage(cause)); }
+      if (unit) setResult(unit);
+      else setError("לא נמצאה יחידת אריזה. בדקו את התווית או את המספר.");
+    } catch (cause) { if (id === operation.current) setError(cause instanceof Error ? cause.message : "החיפוש נכשל."); }
     finally { if (id === operation.current) { inFlight.current = false; setBusy(false); } }
   }, []);
-  const decoded = useCallback((token: string) => { void lookup("qr", token); }, [lookup]);
+  const decoded = useCallback((value: string) => { void lookup("qr", value); }, [lookup]);
 
   function openCamera() {
     setResult(null); setError("");
     if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
-      setError("הגישה למצלמה אינה נתמכת כאן. פתחו את היישום באמצעות HTTPS או localhost, או העלו תמונת QR / הזינו מספר חבילה.");
+      setError("הגישה למצלמה אינה נתמכת כאן. פתחו את היישום באמצעות HTTPS או localhost, או העלו תמונת QR / הזינו מספר יחידה.");
       return;
     }
     setCameraOpen(true);
@@ -77,8 +91,8 @@ export function ScanPackage() {
     <div className="package-stack">
       <div className="scan-grid">
         <section className="panel scan-panel" aria-labelledby="camera-title">
-          <div className="panel-heading"><div><span className="eyebrow">01 / סריקת תווית</span><h2 id="camera-title">איתור חבילה באמצעות קוד QR</h2></div><ScanLine aria-hidden="true" /></div>
-          {cameraOpen ? <CameraPreview onDecoded={decoded} onError={cameraError} onClose={closeCamera} /> :
+          <div className="panel-heading"><div><span className="eyebrow">01 / סריקת תווית</span><h2 id="camera-title">איתור יחידת אריזה באמצעות קוד QR</h2></div><ScanLine aria-hidden="true" /></div>
+          {cameraOpen ? <CameraPreview onDecoded={decoded} onError={cameraError} onClose={closeCamera} isValid={(value) => parsePackingUnitQrValue(value) !== null} /> :
             <div className="camera-placeholder"><ScanLine aria-hidden="true" /><strong>מוכנים לסריקה</strong><p>הרשאת גישה למצלמה תתבקש רק בעת פתיחתה. לא מתבצעת הקלטה.</p></div>}
           <div className="package-actions">
             {cameraOpen ? <button className="button secondary" onClick={closeCamera}><X aria-hidden="true" /> סגירת המצלמה</button> :
@@ -88,22 +102,21 @@ export function ScanPackage() {
               <input aria-label="העלאת תמונת QR" type="file" accept="image/png,image/jpeg,image/webp" disabled={busy} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; void upload(file); }} />
             </label>
           </div>
-          <p className="package-help">PNG, JPEG או WebP · עד 10 מגה־בייט. ניתן להעלות תווית שהורדתם ממחולל הקודים במכשיר זה.</p>
+          <p className="package-help">PNG, JPEG או WebP · עד 10 מגה־בייט.</p>
         </section>
         <section className="panel manual-panel" aria-labelledby="manual-title">
           <div className="panel-heading"><div><span className="eyebrow">02 / הזנת מספר</span><h2 id="manual-title">אפשר גם בלי מצלמה</h2></div><Keyboard aria-hidden="true" /></div>
-          <p className="package-help">הזינו את המספר בן שש הספרות המודפס על תווית החבילה.</p>
+          <p className="package-help">הזינו את מספר יחידת האריזה המודפס על התווית.</p>
           <form noValidate onSubmit={(event) => { event.preventDefault(); void lookup("number", number); }}>
-            <label className="package-field">מספר חבילה<input ref={input} value={number} onChange={(event) => setNumber(event.target.value)} inputMode="numeric" autoComplete="off" placeholder="למשל 100001" maxLength={30} disabled={busy} /></label>
+            <label className="package-field">מספר יחידת אריזה<input ref={input} value={number} onChange={(event) => setNumber(event.target.value)} inputMode="numeric" autoComplete="off" placeholder="למשל 00007" maxLength={5} disabled={busy} /></label>
             <button className="button primary full" type="submit" disabled={busy}><Search aria-hidden="true" /> {busy ? "מחפשים…" : "חיפוש"}</button>
           </form>
-          <div className="demo-tip"><strong>נסו חבילה לדוגמה</strong><p>הזינו <bdi>100001</bdi> לציוד מחשוב שנמצא בהעברה, או <bdi>100006</bdi> לחבילה שדווחה בה תקלה.</p></div>
         </section>
       </div>
-      <div aria-live="polite" aria-atomic="true">{busy && <p className="package-notice">קוראים את התווית ומחפשים את החבילה…</p>}</div>
+      <div aria-live="polite" aria-atomic="true">{busy && <p className="package-notice">קוראים את התווית ומחפשים את היחידה…</p>}</div>
       {error && <p className="package-notice error" role="alert">{error}</p>}
-      {result && <section className="package-stack"><h2 ref={resultHeading} tabIndex={-1} className="result-heading">החבילה נמצאה</h2><PackageCard record={result} />
-        <div className="package-actions"><button className="button primary" disabled={busy} onClick={openCamera}><Camera aria-hidden="true" /> סריקת חבילה נוספת</button><button className="button secondary" disabled={busy} onClick={() => { focusManual.current = true; setResult(null); setError(""); setNumber(""); }}>הזנת מספר נוסף</button></div>
+      {result && <section className="package-stack"><h2 ref={resultHeading} tabIndex={-1} className="result-heading">היחידה נמצאה</h2><PackingUnitResultCard unit={result} />
+        <div className="package-actions"><button className="button primary" disabled={busy} onClick={openCamera}><Camera aria-hidden="true" /> סריקת יחידה נוספת</button><button className="button secondary" disabled={busy} onClick={() => { focusManual.current = true; setResult(null); setError(""); setNumber(""); }}>הזנת מספר נוסף</button></div>
       </section>}
     </div>
   );

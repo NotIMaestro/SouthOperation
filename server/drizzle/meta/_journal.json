@@ -15,6 +15,13 @@
       "when": 1790086970162,
       "tag": "0001_empty_queen_noir",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790107821134,
+      "tag": "0002_broken_nightmare",
+      "breakpoints": true
     }
   ]
 }

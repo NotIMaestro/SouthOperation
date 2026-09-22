@@ -1,17 +1,81 @@
-import { PackageCheck } from "lucide-react";
+import { Building2, PackageCheck } from "lucide-react";
+import Link from "next/link";
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
+import { PickupList } from "@/components/transport/pickup-list";
+import { listGroups, listTransportsForGroup } from "@/lib/server-api";
 
-export default function PickupPage() {
+export default async function PickupPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ groupId?: string }>;
+}) {
+  const { groupId: requestedGroupId } = await searchParams;
+
+  const groupsResult = await listGroups();
+  if (!groupsResult.ok) {
+    return (
+      <main className="page-shell">
+        <PageHeader title="איסוף חבילות" description="ריכוז חבילות הממתינות לאיסוף והעברה" />
+        <EmptyState icon={PackageCheck} title="שגיאה בטעינת קבוצות" description={groupsResult.message} />
+      </main>
+    );
+  }
+
+  const groups = groupsResult.data;
+  if (groups.length === 0) {
+    return (
+      <main className="page-shell">
+        <PageHeader title="איסוף חבילות" description="ריכוז חבילות הממתינות לאיסוף והעברה" />
+        <EmptyState icon={Building2} title="אין קבוצות זמינות" description="אינכם משויכים לאף קבוצה פעילה." />
+      </main>
+    );
+  }
+
+  const activeGroupId =
+    requestedGroupId && groups.some((group) => group.id === requestedGroupId)
+      ? requestedGroupId
+      : groups.length === 1
+        ? groups[0].id
+        : undefined;
+
+  if (!activeGroupId) {
+    return (
+      <main className="page-shell">
+        <PageHeader description="בחרו קבוצה כדי להציג את ההובלות הממתינות לאיסוף" title="איסוף חבילות" />
+        <div className="card-list">
+          {groups.map((group) => (
+            <Link className="entity-card" href={`/pickup?groupId=${group.id}`} key={group.id}>
+              <div>
+                <p className="entity-card-title">{group.name}</p>
+                <p className="entity-card-meta">{group.groupCode}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </main>
+    );
+  }
+
+  const transportsResult = await listTransportsForGroup(activeGroupId, "waiting");
+  if (!transportsResult.ok) {
+    return (
+      <main className="page-shell">
+        <PageHeader title="איסוף חבילות" description="ריכוז חבילות הממתינות לאיסוף והעברה" />
+        <EmptyState icon={PackageCheck} title="שגיאה בטעינת הובלות" description={transportsResult.message} />
+      </main>
+    );
+  }
+
   return (
     <main className="page-shell">
-      <PageHeader title="איסוף חבילות" description="ריכוז חבילות הממתינות לאיסוף והעברה" />
-      <EmptyState
-        icon={PackageCheck}
-        title="אין חבילות לאיסוף"
-        description="חבילות שימתינו לאיסוף יוצגו כאן."
-      />
+      <PageHeader title="איסוף חבילות" description="הובלות שממתינות לאיסוף בקבוצה זו. אישור איסוף מעביר אותן לדרך." />
+      {transportsResult.data.length === 0 ? (
+        <EmptyState icon={PackageCheck} title="אין חבילות לאיסוף" description="הובלות שימתינו לאיסוף יוצגו כאן." />
+      ) : (
+        <PickupList transports={transportsResult.data} />
+      )}
     </main>
   );
 }

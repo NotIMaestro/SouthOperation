@@ -1,7 +1,4 @@
-import { qrTokenSchema } from "./types";
-
-export async function generateQrPng(token: string): Promise<string> {
-  const value = qrTokenSchema.parse(token);
+export async function toQrPng(value: string): Promise<string> {
   const QRCode = await import("qrcode");
   return QRCode.toDataURL(value, { width: 640, margin: 4, errorCorrectionLevel: "M" });
 }
@@ -43,4 +40,17 @@ export async function createCameraDecoder(): Promise<CameraDecoder> {
     },
     dispose() { if (engine instanceof Worker) engine.terminate(); },
   };
+}
+
+export const PACKING_UNIT_QR_PREFIX = "UNIT:";
+
+export function toPackingUnitQrValue(packingUnitId: string) {
+  return `${PACKING_UNIT_QR_PREFIX}${packingUnitId}`;
+}
+
+export function parsePackingUnitQrValue(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed.startsWith(PACKING_UNIT_QR_PREFIX)) return null;
+  const id = trimmed.slice(PACKING_UNIT_QR_PREFIX.length);
+  return /^[0-9a-f-]{36}$/i.test(id) ? id : null;
 }

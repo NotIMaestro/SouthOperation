@@ -2,7 +2,7 @@ import {
   Menu,
   PackageCheck,
   PackageOpen,
-  QrCode,
+  ScanLine,
   ShieldCheck,
   Truck,
   Waypoints,
@@ -48,8 +48,7 @@ function Navigation() {
     {managementLinks.map(({ href, label, icon: Icon }) => (
       <NavigationLink href={href} key={href}><Icon aria-hidden="true" /><span>{label}</span></NavigationLink>
     ))}
-    <span className="nav-section-label">פיתוח / הדגמה</span>
-    <NavigationLink href="/demo/qr-generator"><QrCode aria-hidden="true" /><span>מחולל קודי QR</span></NavigationLink>
+    <NavigationLink href="/scan-package"><ScanLine aria-hidden="true" /><span>סריקת יחידת אריזה</span></NavigationLink>
   </>;
 }
 
