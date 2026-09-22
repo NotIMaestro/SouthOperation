@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-import { signOut } from "@/auth";
+import { auth, signOut } from "@/auth";
 import { listGroups } from "@/lib/server-api";
 import { getSelectedGroupIdFromCookie } from "@/lib/selected-group";
 
@@ -30,7 +30,7 @@ const managementLinks = [
   { href: "/logistics", label: "הצגת לוגיסטיקה", icon: Waypoints },
 ];
 
-function localGreeting() {
+function localGreeting(name?: string | null) {
   const hour = Number(
     new Intl.DateTimeFormat("he-IL", {
       hour: "2-digit",
@@ -39,9 +39,17 @@ function localGreeting() {
     }).format(new Date()),
   );
 
-  if (hour < 12) return "בוקר טוב משתמש";
-  if (hour < 18) return "צהריים טובים משתמש";
-  return "ערב טוב משתמש";
+  const greeting =
+    hour >= 5 && hour < 12
+      ? "בוקר טוב"
+      : hour >= 12 && hour < 17
+        ? "צהריים טובים"
+        : hour >= 17 && hour < 21
+          ? "ערב טוב"
+          : "לילה טוב";
+
+  const displayName = name?.trim() || "משתמש";
+  return `${greeting}, ${displayName}`;
 }
 
 function Navigation() {
@@ -79,7 +87,11 @@ export async function AppShell({
 }: {
   children: React.ReactNode;
 }) {
-  const [groupsResult, selectedGroupId] = await Promise.all([listGroups(), getSelectedGroupIdFromCookie()]);
+  const [groupsResult, selectedGroupId, session] = await Promise.all([
+    listGroups(),
+    getSelectedGroupIdFromCookie(),
+    auth(),
+  ]);
   const groups = groupsResult.ok ? groupsResult.data : [];
 
   return (
@@ -87,7 +99,7 @@ export async function AppShell({
       <aside className="sidebar">
         <Link className="brand" href="/dashboard">
           <span className="brand-mark"><Waypoints aria-hidden="true" /></span>
-          <span className="brand-copy"><strong>מעבר דרומה</strong><small>{localGreeting()}</small></span>
+          <span className="brand-copy"><strong>מעבר דרומה</strong><small>{localGreeting(session?.user?.name)}</small></span>
         </Link>
         <GroupSwitcher groups={groups} selectedGroupId={selectedGroupId} />
         <nav className="side-nav" aria-label="ניווט במערכת">
