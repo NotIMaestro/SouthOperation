@@ -1,4 +1,5 @@
 import NextAuth from "next-auth";
+import type { Provider } from "next-auth/providers";
 import Credentials from "next-auth/providers/credentials";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 
@@ -9,65 +10,61 @@ type EntraProfile = {
   sub?: string | null;
 };
 
-const isMicrosoftConfigured = () => {
-  const id = process.env.AUTH_MICROSOFT_ENTRA_ID_ID ?? "";
-  const secret = process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET ?? "";
-  const issuer = process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER ?? "";
-
-  const placeholderTokens = ["00000000-0000-0000-0000-000000000000", "YOUR_TENANT_ID", "your_tenant_id", "local-dev", "example"];
-
-  return [id, secret, issuer].every((value) => value.trim().length > 0) &&
-    !placeholderTokens.some((value) => id.includes(value) || secret.includes(value) || issuer.includes(value));
-};
-
 async function findInvitedUser(profile: EntraProfile) {
   const subject = profile.oid ?? profile.sub;
   return subject ? resolveInvitedUser(subject) : undefined;
 }
 
-const localDevCredentialsProvider = Credentials({
-  name: "Local development",
-  credentials: {
-    username: { label: "Username", type: "text" },
-  },
-  async authorize(credentials) {
-    const username = String(credentials?.username ?? "local-admin").trim() || "local-admin";
-    return {
-      id: `local-dev-${username}`,
-      name: username,
-      email: `${username}@local.test`,
-    };
-  },
-});
+// DEV-ONLY BYPASS. `NODE_ENV` is always "production" for a built/deployed app
+// (Vercel included, preview or prod) — `next dev` is the only runtime where
+// it is not — so this branch is structurally unreachable outside a local
+// `pnpm dev`. It additionally requires an explicit opt-in env var so a bare
+// local run never silently skips real sign-in. Remove before shipping real
+// auth-dependent features.
+const devBypassEnabled =
+  process.env.NODE_ENV !== "production" && process.env.DEV_AUTH_BYPASS === "true";
+const devBypassUserId =
+  process.env.DEV_AUTH_BYPASS_USER_ID ?? "00000000-0000-0000-0000-000000000001";
+
+const providers: Provider[] = [MicrosoftEntraID];
+if (devBypassEnabled) {
+  providers.push(
+    Credentials({
+      id: "dev-bypass",
+      name: "Local dev (insecure)",
+      credentials: {},
+      async authorize() {
+        return { id: devBypassUserId, name: "משתמש פיתוח מקומי", email: "dev-bypass@local" };
+      },
+    }),
+  );
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  providers: isMicrosoftConfigured() ? [MicrosoftEntraID] : [localDevCredentialsProvider],
+  providers,
   session: { strategy: "jwt", maxAge: 60 * 60 * 8 },
   pages: { signIn: "/sign-in", error: "/sign-in" },
   callbacks: {
-    async signIn({ profile, user, account }) {
-      if (account?.provider === "credentials") return true;
+    async signIn({ profile, account }) {
+      if (devBypassEnabled && account?.provider === "dev-bypass") return true;
       if (!profile) return false;
 
       try {
         return Boolean(await findInvitedUser(profile));
       } catch {
+        // Fail closed when identity membership cannot be verified.
         return false;
       }
     },
-    async jwt({ token, profile, user, account }) {
-      if (account?.provider === "credentials") {
-        token.internalUserId = user?.id ?? "local-dev-user";
+    async jwt({ token, profile, account, user }) {
+      if (devBypassEnabled && account?.provider === "dev-bypass") {
+        if (user) token.internalUserId = user.id;
         return token;
       }
-
-      if (!profile) return token;
-
-      const subject = profile.oid ?? profile.sub;
-      if (!subject) return token;
-
-      const invitedUser = await findInvitedUser(profile).catch(() => undefined);
-      token.internalUserId = invitedUser?.id ?? `local-dev:${subject}`;
+      if (profile) {
+        const invitedUser = await findInvitedUser(profile);
+        token.internalUserId = invitedUser?.id;
+      }
       return token;
     },
     session({ session, token }) {
