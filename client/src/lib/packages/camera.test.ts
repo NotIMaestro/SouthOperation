@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { PackageCamera, cameraErrorMessage } from "./camera";
+import { scannedValueSchema } from "@/lib/pickup/types";
 
 function setup(values: Array<string | null> = [null]) {
   const stop = vi.fn();
@@ -14,6 +15,15 @@ function setup(values: Array<string | null> = [null]) {
 afterEach(() => vi.useRealTimers());
 
 describe("camera lifetime", () => {
+  it("stops the shared camera before delivering a collection barcode", async () => {
+    vi.useFakeTimers();
+    const { video, callbacks, dependencies, stop, decoder } = setup(["7290001000010", "7290001000010"]);
+    const camera = new PackageCamera(video, callbacks, dependencies, (value) => scannedValueSchema.safeParse(value));
+    callbacks.decoded.mockImplementation(() => expect(stop).toHaveBeenCalledTimes(1));
+    await camera.start(); await vi.advanceTimersByTimeAsync(1000);
+    expect(callbacks.decoded).toHaveBeenCalledExactlyOnceWith("7290001000010");
+    expect(decoder.dispose).toHaveBeenCalledTimes(1);
+  });
   it("stops every track and decoder when closed or unmounted", async () => {
     vi.useFakeTimers();
     const { camera, video, stop, decoder } = setup();
