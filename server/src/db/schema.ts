@@ -49,6 +49,27 @@ export const outboxStatus = pgEnum("outbox_status", [
   "failed",
 ]);
 
+export const roomPackingStatus = pgEnum("room_packing_status", [
+  "not_started",
+  "in_packing",
+  "paused",
+  "closed",
+]);
+
+export const packingUnitType = pgEnum("packing_unit_type", [
+  "professional_carton",
+  "personal_carton",
+  "pallet",
+  "dolav",
+  "bulk",
+]);
+
+export const packingUnitStatus = pgEnum("packing_unit_status", [
+  "awaiting_packing",
+  "packing_in_progress",
+  "closed",
+]);
+
 export const users = pgTable(
   "users",
   {
@@ -171,6 +192,9 @@ export const rooms = pgTable(
     description: text("description"),
     managerName: varchar("manager_name", { length: 160 }),
     status: roomStatus("status").notNull().default("unstarted"),
+    packingStatus: roomPackingStatus("packing_status")
+      .notNull()
+      .default("not_started"),
     startedAt: timestamp("started_at", { withTimezone: true }),
     completedAt: timestamp("completed_at", { withTimezone: true }),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
@@ -292,6 +316,77 @@ export const mappingReports = pgTable(
   ],
 );
 
+export const sequenceCounters = pgTable("sequence_counters", {
+  key: varchar("key", { length: 64 }).primaryKey(),
+  value: integer("value").notNull().default(0),
+});
+
+export const packingUnits = pgTable(
+  "packing_units",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    roomId: uuid("room_id")
+      .notNull()
+      .references(() => rooms.id, { onDelete: "restrict" }),
+    unitType: packingUnitType("unit_type").notNull(),
+    status: packingUnitStatus("status").notNull().default("awaiting_packing"),
+    unitNumber: varchar("unit_number", { length: 5 }),
+    destinationBuilding: varchar("destination_building", { length: 160 }),
+    destinationFloor: varchar("destination_floor", { length: 60 }),
+    destinationRoom: varchar("destination_room", { length: 160 }),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    closedAt: timestamp("closed_at", { withTimezone: true }),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("packing_units_unit_number_uidx")
+      .on(table.unitNumber)
+      .where(sql`${table.unitNumber} IS NOT NULL`),
+    index("packing_units_room_archive_idx").on(table.roomId, table.archivedAt),
+    index("packing_units_status_idx").on(table.status),
+    check(
+      "packing_units_status_check",
+      sql`(${table.status} IN ('awaiting_packing', 'packing_in_progress') AND ${table.unitNumber} IS NULL AND ${table.closedAt} IS NULL) OR (${table.status} = 'closed' AND ${table.unitNumber} IS NOT NULL AND ${table.closedAt} IS NOT NULL AND ${table.destinationBuilding} IS NOT NULL AND ${table.destinationRoom} IS NOT NULL)`,
+    ),
+  ],
+);
+
+export const packingUnitItems = pgTable(
+  "packing_unit_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    packingUnitId: uuid("packing_unit_id")
+      .notNull()
+      .references(() => packingUnits.id, { onDelete: "restrict" }),
+    mappingReportId: uuid("mapping_report_id")
+      .notNull()
+      .references(() => mappingReports.id, { onDelete: "restrict" }),
+    quantity: integer("quantity").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("packing_unit_items_unit_report_uidx").on(
+      table.packingUnitId,
+      table.mappingReportId,
+    ),
+    index("packing_unit_items_report_idx").on(table.mappingReportId),
+    check("packing_unit_items_quantity_check", sql`${table.quantity} > 0`),
+  ],
+);
+
 export const auditEvents = pgTable(
   "audit_events",
   {
@@ -353,3 +448,6 @@ export type UserRole = (typeof userRole.enumValues)[number];
 export type MembershipRole = (typeof membershipRole.enumValues)[number];
 export type RoomStatus = (typeof roomStatus.enumValues)[number];
 export type ReportStatus = (typeof reportStatus.enumValues)[number];
+export type RoomPackingStatus = (typeof roomPackingStatus.enumValues)[number];
+export type PackingUnitType = (typeof packingUnitType.enumValues)[number];
+export type PackingUnitStatus = (typeof packingUnitStatus.enumValues)[number];

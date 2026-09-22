@@ -5,12 +5,17 @@ import {
   FileClock,
   LayoutDashboard,
   LibraryBig,
+  Menu,
+  QrCode,
+  ScanLine,
   ShieldCheck,
   Truck,
   UsersRound,
   Waypoints,
 } from "lucide-react";
 import Link from "next/link";
+
+import { NavigationLink } from "./navigation-link";
 
 const links = [
   { href: "/dashboard", label: "לוח בקרה", icon: LayoutDashboard },
@@ -20,8 +25,19 @@ const links = [
   { href: "/catalog", label: "קטלוג", icon: LibraryBig },
   { href: "/memberships", label: "הרשאות", icon: UsersRound },
   { href: "/audit", label: "יומן ביקורת", icon: FileClock },
+  { href: "/scan-package", label: "סריקת חבילה", icon: ScanLine },
   { href: "/transport", label: "הובלה", icon: Truck },
 ];
+
+function Navigation() {
+  return <>
+    {links.map(({ href, label, icon: Icon }) => (
+      <NavigationLink href={href} key={href}><Icon aria-hidden="true" /><span>{label}</span></NavigationLink>
+    ))}
+    <span className="nav-section-label">פיתוח / הדגמה</span>
+    <NavigationLink href="/demo/qr-generator"><QrCode aria-hidden="true" /><span>מחולל קודי QR</span></NavigationLink>
+  </>;
+}
 
 export function AppShell({
   children,
@@ -38,9 +54,7 @@ export function AppShell({
           <span>מעבר דרומה</span>
         </Link>
         <nav className="side-nav" aria-label="ניווט במערכת">
-          {links.map(({ href, label, icon: Icon }) => (
-            <Link href={href} key={href}><Icon aria-hidden="true" /><span>{label}</span></Link>
-          ))}
+          <Navigation />
         </nav>
         <div className="sidebar-footer">
           <span className="secure-chip"><ShieldCheck aria-hidden="true" /> חיבור מאובטח</span>
@@ -54,6 +68,7 @@ export function AppShell({
         <header className="mobile-header">
           <Link aria-label="לוח הבקרה" href="/dashboard"><Waypoints aria-hidden="true" /></Link>
           <span>מעבר דרומה</span>
+          <details className="mobile-navigation"><summary><Menu aria-hidden="true" /><span>תפריט</span></summary><nav className="side-nav" aria-label="ניווט במכשיר נייד"><Navigation /></nav></details>
         </header>
         {children}
       </div>
