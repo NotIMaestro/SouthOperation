@@ -1,6 +1,6 @@
 import { LogIn, ShieldCheck } from "lucide-react";
 
-import { microsoftEntraIdConfigured, signIn } from "@/auth";
+import { devBypassEnabled, microsoftEntraIdConfigured, signIn } from "@/auth";
 
 export const metadata = { title: "כניסה מאובטחת" };
 
@@ -27,6 +27,18 @@ export default function SignInPage() {
           <div className="receiving-error" role="status">
             החיבור הארגוני עדיין לא הוגדר בסביבה זו.
           </div>
+        )}
+        {devBypassEnabled && (
+          <form
+            action={async () => {
+              "use server";
+              await signIn("dev-bypass", { redirectTo: "/dashboard" });
+            }}
+          >
+            <button className="button secondary full" type="submit">
+              כניסת פיתוח מקומית (ללא Entra)
+            </button>
+          </form>
         )}
         <small>המערכת אינה שומרת סיסמאות ארגוניות.</small>
       </section>

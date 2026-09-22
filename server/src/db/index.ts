@@ -15,6 +15,10 @@ function createDatabase() {
   const client = postgres(databaseUrl, {
     max: 1,
     prepare: false,
+    connect_timeout: 10,
+    idle_timeout: 20,
+    max_lifetime: 60 * 5,
+    connection: { statement_timeout: 10_000 },
   });
 
   return drizzle(client, { schema });
