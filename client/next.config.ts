@@ -33,6 +33,8 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
+  transpilePackages: ["@south-operation/server"],
+  serverExternalPackages: ["postgres"],
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },

@@ -1,5 +1,6 @@
-import { proxyServerRequest } from "@/lib/server-api";
-
-export function GET(request: Request) {
-  return proxyServerRequest(request, "/health");
+export function GET() {
+  return Response.json(
+    { status: "ok", service: "south-operation", timestamp: new Date().toISOString() },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }

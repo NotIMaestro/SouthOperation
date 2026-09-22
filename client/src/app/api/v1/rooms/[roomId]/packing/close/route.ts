@@ -1,8 +1,17 @@
-import { proxyAuthenticatedRequest } from "@/lib/authenticated-proxy";
+import { requireGroupAccess } from "@south-operation/server/authorization";
+import { closeRoomPacking, loadRoomForGroup } from "@south-operation/server/packing";
+
+import { getActor } from "@/lib/actor";
+import { apiRoute } from "@/lib/api-route";
+import { uuidSchema } from "@/lib/api-schemas";
 
 type RouteContext = { params: Promise<{ roomId: string }> };
 
-export async function POST(request: Request, context: RouteContext) {
-  const { roomId } = await context.params;
-  return proxyAuthenticatedRequest(request, `/v1/rooms/${encodeURIComponent(roomId)}/packing/close`);
-}
+export const POST = apiRoute<RouteContext>(async (_request, context, requestId) => {
+  const roomId = uuidSchema.parse((await context.params).roomId);
+  const actor = await getActor();
+  const room = await loadRoomForGroup(roomId);
+  await requireGroupAccess(actor, room.groupId);
+  const data = await closeRoomPacking(actor, roomId, requestId);
+  return { data };
+});
