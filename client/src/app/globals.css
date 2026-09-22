@@ -141,6 +141,22 @@ svg { width: 1.15rem; height: 1.15rem; stroke-width: 1.8; }
 .empty-state > span svg { width: 1.8rem; height: 1.8rem; }
 .empty-state h2 { margin: 1.15rem 0 0.45rem; }
 .empty-state p { max-width: 30rem; margin: 0; color: var(--muted); line-height: 1.6; }
+.transport-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+.transport-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin: 1.5rem 0 1rem; }
+.transport-filters { display: flex; gap: 0.65rem; flex-wrap: wrap; }
+.transport-filters select, .transport-filters input { min-height: 2.6rem; border: 1px solid var(--line); border-radius: 0.7rem; padding: 0.55rem 0.75rem; color: var(--ink); background: var(--surface); }
+.transport-list { display: grid; gap: 0.7rem; }
+.transport-row { display: grid; grid-template-columns: 1.1fr 1fr 1fr auto; align-items: center; gap: 1rem; padding: 1rem 1.15rem; border: 1px solid var(--line); border-radius: 0.85rem; background: rgba(255,255,255,0.84); }
+.transport-row strong, .transport-row small { display: block; }
+.transport-row small { margin-top: 0.25rem; color: var(--muted); }
+.transport-status { display: inline-flex; width: fit-content; align-items: center; border-radius: 999px; padding: 0.35rem 0.65rem; font-size: 0.78rem; font-weight: 700; }
+.transport-status.ready { color: #176044; background: #dff4e9; }
+.transport-status.progress { color: #7b5312; background: #fff0c9; }
+.transport-status.done { color: #49615a; background: #e8eeeb; }
+.transport-actions { display: flex; gap: 0.45rem; }
+.transport-actions .button { min-height: 2.35rem; padding: 0.45rem 0.7rem; font-size: 0.82rem; }
+@media (max-width: 940px) { .transport-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .transport-row { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 640px) { .transport-grid { grid-template-columns: 1fr; } .transport-toolbar { align-items: stretch; flex-direction: column; } .transport-row { grid-template-columns: 1fr; } }
 
 @media (max-width: 940px) {
   .hero { grid-template-columns: 1fr; margin-top: 3rem; }
