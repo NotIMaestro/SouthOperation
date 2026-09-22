@@ -9,6 +9,9 @@ export default async function SignInPage() {
   const session = await auth();
   if (session?.user?.id) redirect("/dashboard");
 
+  const devBypassEnabled =
+    process.env.NODE_ENV !== "production" && process.env.DEV_AUTH_BYPASS === "true";
+
   return (
     <main className="auth-shell">
       <section className="auth-card">
@@ -27,6 +30,18 @@ export default async function SignInPage() {
           </button>
         </form>
         <small>אימות רב־שלבי נאכף על ידי מדיניות הארגון.</small>
+        {devBypassEnabled && (
+          <form
+            action={async () => {
+              "use server";
+              await signIn("dev-bypass", { redirectTo: "/dashboard" });
+            }}
+          >
+            <button className="button secondary full" type="submit">
+              כניסת פיתוח מקומית (ללא Entra)
+            </button>
+          </form>
+        )}
       </section>
     </main>
   );

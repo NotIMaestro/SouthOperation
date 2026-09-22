@@ -1,15 +1,19 @@
-import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 
 import { getDb } from "../db";
 import {
   auditEvents,
+  categories,
   exportOutbox,
+  itemTypes,
   mappingReports,
   packingUnitItems,
   packingUnits,
   rooms,
   sequenceCounters,
+  subcategories,
   type PackingUnitType,
+  type RoomPackingStatus,
 } from "../db/schema";
 import type { Actor } from "../lib/authorization";
 import { HttpError } from "../lib/errors";
@@ -35,6 +39,9 @@ export async function loadRoomForGroup(roomId: string) {
     .select({
       id: rooms.id,
       groupId: rooms.groupId,
+      name: rooms.name,
+      description: rooms.description,
+      managerName: rooms.managerName,
       status: rooms.status,
       packingStatus: rooms.packingStatus,
     })
@@ -94,6 +101,61 @@ export async function listPackingUnits(groupId: string, roomId: string) {
       ),
     )
     .orderBy(asc(packingUnits.createdAt));
+}
+
+export async function listPackableItems(groupId: string, roomId: string) {
+  const db = getDb();
+  const reports = await db
+    .select({
+      mappingReportId: mappingReports.id,
+      quantity: mappingReports.quantity,
+      serialNumber: mappingReports.serialNumber,
+      subcategoryName: subcategories.name,
+      categoryName: categories.name,
+      itemTypeName: itemTypes.name,
+    })
+    .from(mappingReports)
+    .innerJoin(rooms, eq(mappingReports.roomId, rooms.id))
+    .innerJoin(subcategories, eq(mappingReports.subcategoryId, subcategories.id))
+    .leftJoin(categories, eq(subcategories.categoryId, categories.id))
+    .leftJoin(itemTypes, eq(categories.itemTypeId, itemTypes.id))
+    .where(
+      and(
+        eq(mappingReports.roomId, roomId),
+        eq(rooms.groupId, groupId),
+        eq(mappingReports.status, "approved"),
+        isNull(mappingReports.archivedAt),
+      ),
+    )
+    .orderBy(asc(subcategories.name));
+
+  if (reports.length === 0) return [];
+
+  const reportIds = reports.map((report) => report.mappingReportId);
+  const packedByReport = await db
+    .select({
+      mappingReportId: packingUnitItems.mappingReportId,
+      packed: sql<number>`sum(${packingUnitItems.quantity})`.mapWith(Number),
+    })
+    .from(packingUnitItems)
+    .innerJoin(packingUnits, eq(packingUnitItems.packingUnitId, packingUnits.id))
+    .where(
+      and(
+        inArray(packingUnitItems.mappingReportId, reportIds),
+        isNull(packingUnits.archivedAt),
+      ),
+    )
+    .groupBy(packingUnitItems.mappingReportId);
+  const packedByReportId = new Map(packedByReport.map((row) => [row.mappingReportId, row.packed]));
+
+  return reports.map((report) => {
+    const packedQuantity = packedByReportId.get(report.mappingReportId) ?? 0;
+    return {
+      ...report,
+      packedQuantity,
+      remainingQuantity: report.quantity - packedQuantity,
+    };
+  });
 }
 
 export async function createPackingUnit(
@@ -357,4 +419,59 @@ export async function closePackingUnit(
   ]);
 
   return { id: packingUnitId, status: "closed" as const, unitNumber };
+}
+
+async function transitionRoomPacking(
+  actor: Actor,
+  roomId: string,
+  to: Extract<RoomPackingStatus, "closed" | "paused">,
+  requestId: string,
+) {
+  const room = await loadRoomForGroup(roomId);
+  assertRoomPackingTransition(room.packingStatus, to);
+
+  const db = getDb();
+  const [openUnit] = await db
+    .select({ id: packingUnits.id })
+    .from(packingUnits)
+    .where(
+      and(
+        eq(packingUnits.roomId, roomId),
+        isNull(packingUnits.archivedAt),
+        or(
+          eq(packingUnits.status, "awaiting_packing"),
+          eq(packingUnits.status, "packing_in_progress"),
+        ),
+      ),
+    )
+    .limit(1);
+
+  if (openUnit) {
+    throw new HttpError(409, "OPEN_PACKING_UNITS_EXIST", "יש לסיים את כל יחידות האריזה הפתוחות.");
+  }
+
+  const occurredAt = new Date();
+  await db.batch([
+    db.update(rooms).set({ packingStatus: to }).where(eq(rooms.id, roomId)),
+    db.insert(auditEvents).values({
+      actorUserId: actor.id,
+      action: to === "closed" ? "room_packing.closed" : "room_packing.paused",
+      entityType: "room",
+      entityId: roomId,
+      groupId: room.groupId,
+      requestId,
+      metadata: {},
+      occurredAt,
+    }),
+  ]);
+
+  return { roomId, packingStatus: to };
+}
+
+export async function closeRoomPacking(actor: Actor, roomId: string, requestId: string) {
+  return transitionRoomPacking(actor, roomId, "closed", requestId);
+}
+
+export async function pauseRoomPacking(actor: Actor, roomId: string, requestId: string) {
+  return transitionRoomPacking(actor, roomId, "paused", requestId);
 }
