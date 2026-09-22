@@ -1,16 +1,21 @@
 import {
   Boxes,
   Building2,
+  ChevronUp,
   ClipboardCheck,
   FileClock,
   LayoutDashboard,
   LibraryBig,
+  LogOut,
   ShieldCheck,
+  PackageCheck,
   Truck,
   UsersRound,
   Waypoints,
 } from "lucide-react";
 import Link from "next/link";
+
+import { signOut } from "@/auth";
 
 const links = [
   { href: "/dashboard", label: "לוח בקרה", icon: LayoutDashboard },
@@ -21,6 +26,7 @@ const links = [
   { href: "/memberships", label: "הרשאות", icon: UsersRound },
   { href: "/audit", label: "יומן ביקורת", icon: FileClock },
   { href: "/transport", label: "הובלה", icon: Truck },
+  { href: "/receiving", label: "קבלת ציוד", icon: PackageCheck },
 ];
 
 export function AppShell({
@@ -44,10 +50,26 @@ export function AppShell({
         </nav>
         <div className="sidebar-footer">
           <span className="secure-chip"><ShieldCheck aria-hidden="true" /> חיבור מאובטח</span>
-          <div className="sidebar-user">
-            <span className="avatar">מ</span>
-            <span><strong>{userName}</strong><small>מצב מקומי</small></span>
-          </div>
+          <details className="sidebar-user-menu">
+            <summary className="sidebar-user">
+              <span className="avatar">מ</span>
+              <span><strong>{userName}</strong><small>משתמש מאומת</small></span>
+              <ChevronUp className="user-menu-chevron" aria-hidden="true" />
+            </summary>
+            <div className="user-menu-popover">
+              <form
+                action={async () => {
+                  "use server";
+                  await signOut({ redirectTo: "/sign-in" });
+                }}
+              >
+                <button className="sign-out-button" type="submit">
+                  <LogOut aria-hidden="true" />
+                  <span>התנתקות</span>
+                </button>
+              </form>
+            </div>
+          </details>
         </div>
       </aside>
       <div className="workspace">

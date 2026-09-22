@@ -130,9 +130,17 @@ pnpm db:migrate    # Apply migrations; development first
 - Client proxy: `GET|POST /api/v1/groups`
 - Client proxy: `GET|POST /api/v1/groups/:groupId/rooms`
 - Client proxy: `GET|POST /api/v1/mapping-reports?groupId=:groupId`
+- Client proxy: `GET /api/v1/receiving/transports`
+- Client proxy: `POST /api/v1/receiving/transports/:transportUnitId/complete`
 - Server: the equivalent API is exposed under `/health` and `/v1/*`; `/internal/*` is private
 
 All protected responses use `Cache-Control: no-store`. API expansion should remain versioned and reuse the centralized server authorization policies.
+
+The equipment-receiving flow lives at `/receiving`. It lists only in-transit vehicles in the
+signed-in user's authorized groups, records received and missing packing units and their linked
+items, releases the vehicle with optimistic version checking, appends an audit event, and queues
+the notification through the outbox. The UI requires a second confirmation when any package is
+missing.
 
 ## Current verification
 
@@ -140,7 +148,7 @@ All protected responses use `Cache-Control: no-store`. API expansion should rema
 - ESLint: passing
 - Unit tests: passing
 - Next.js production build: passing
-- Database migration: generated, not applied
+- Equipment-receiving migration: applied to the connected development database
 - Vercel link/env pull: not completed locally
 - Deployment: not performed
 

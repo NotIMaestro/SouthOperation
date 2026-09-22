@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, or } from "drizzle-orm";
 
 import { getDb } from "../db";
 import { memberships, users, type MembershipRole, type UserRole } from "../db/schema";
@@ -9,16 +9,47 @@ export type Actor = {
   role: UserRole;
 };
 
-export async function findInvitedUserBySubject(subject: string | null | undefined) {
-  if (!subject) return undefined;
-
-  const [user] = await getDb()
+export async function provisionEnterpriseUser(input: {
+  subject: string;
+  email: string;
+  displayName: string;
+  role: UserRole;
+}) {
+  const db = getDb();
+  const [existingUser] = await db
     .select({ id: users.id })
     .from(users)
-    .where(and(eq(users.externalSubject, subject), eq(users.isActive, true)))
+    .where(
+      or(
+        eq(users.externalSubject, input.subject),
+        eq(users.email, input.email),
+      ),
+    )
     .limit(1);
 
-  return user;
+  const [user] = existingUser
+    ? await db
+        .update(users)
+        .set({
+          externalSubject: input.subject,
+          email: input.email,
+          displayName: input.displayName,
+          role: input.role,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, existingUser.id))
+        .returning({ id: users.id, isActive: users.isActive })
+    : await db
+        .insert(users)
+        .values({
+          externalSubject: input.subject,
+          email: input.email,
+          displayName: input.displayName,
+          role: input.role,
+        })
+        .returning({ id: users.id, isActive: users.isActive });
+
+  return user?.isActive ? { id: user.id } : undefined;
 }
 
 export async function requireActor(userId: string | undefined): Promise<Actor> {

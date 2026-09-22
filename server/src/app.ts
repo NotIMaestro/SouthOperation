@@ -3,7 +3,7 @@ import { secureHeaders } from "hono/secure-headers";
 import { z } from "zod";
 
 import {
-  findInvitedUserBySubject,
+  provisionEnterpriseUser,
   requireActor,
   requireGlobalRole,
   requireGroupAccess,
@@ -13,13 +13,24 @@ import { errorResponse, HttpError, parseJson, requestIdFrom } from "./lib/errors
 import { requireInternalRequest } from "./lib/internal-auth";
 import { createGroup, listVisibleGroups } from "./services/groups";
 import { createReport, listReports } from "./services/reports";
+import {
+  completeReceiving,
+  listInboundTransportUnits,
+} from "./services/receiving";
 import { createRoom, listRooms } from "./services/rooms";
 
 type Variables = { requestId: string };
 
 const app = new Hono<{ Variables: Variables }>();
 const uuidSchema = z.uuid();
-const resolveUserSchema = z.object({ subject: z.string().min(1).max(512) }).strict();
+const resolveUserSchema = z
+  .object({
+    subject: z.string().min(1).max(512),
+    email: z.string().trim().min(3).max(320),
+    displayName: z.string().trim().min(1).max(160),
+    role: z.enum(["admin", "manager", "commander", "operator"]),
+  })
+  .strict();
 const createGroupSchema = z
   .object({
     groupCodeId: z.uuid(),
@@ -53,6 +64,12 @@ const createReportSchema = z
     message: "A serialized report must have quantity 1.",
     path: ["quantity"],
   });
+const completeReceivingSchema = z
+  .object({
+    expectedVersion: z.number().int().positive(),
+    receivedPackingUnitIds: z.array(z.uuid()).max(10_000),
+  })
+  .strict();
 
 app.use("*", secureHeaders());
 app.use("*", async (context, next) => {
@@ -80,8 +97,8 @@ app.get("/health", (context) =>
 
 app.post("/internal/auth/resolve", async (context) => {
   requireInternalRequest(context.req.raw);
-  const { subject } = resolveUserSchema.parse(await parseJson(context.req.raw));
-  const user = await findInvitedUserBySubject(subject);
+  const input = resolveUserSchema.parse(await parseJson(context.req.raw));
+  const user = await provisionEnterpriseUser(input);
   if (!user) throw new HttpError(404, "NOT_FOUND", "The requested resource was not found.");
   return context.json({ data: user, requestId: requestId(context) });
 });
@@ -130,6 +147,27 @@ app.post("/v1/mapping-reports", async (context) => {
   await requireGroupAccess(actor, groupId);
   const data = await createReport(actor, groupId, input, requestId(context));
   return context.json({ data, requestId: requestId(context) }, 201);
+});
+
+app.get("/v1/receiving/transports", async (context) => {
+  const actor = await actorFrom(context.req.raw);
+  return context.json({
+    data: await listInboundTransportUnits(actor),
+    requestId: requestId(context),
+  });
+});
+
+app.post("/v1/receiving/transports/:transportUnitId/complete", async (context) => {
+  const transportUnitId = uuidSchema.parse(context.req.param("transportUnitId"));
+  const actor = await actorFrom(context.req.raw);
+  const input = completeReceivingSchema.parse(await parseJson(context.req.raw));
+  const data = await completeReceiving(
+    actor,
+    transportUnitId,
+    input,
+    requestId(context),
+  );
+  return context.json({ data, requestId: requestId(context) });
 });
 
 app.notFound((context) =>

@@ -33,11 +33,16 @@ async function serverRequest(
   });
 }
 
-export async function resolveInvitedUser(subject: string) {
+export async function provisionEnterpriseUser(input: {
+  subject: string;
+  email: string;
+  displayName: string;
+  role: "admin" | "manager" | "commander" | "operator";
+}) {
   const response = await serverRequest("/internal/auth/resolve", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ subject }),
+    body: JSON.stringify(input),
   });
 
   if (!response.ok) return undefined;
