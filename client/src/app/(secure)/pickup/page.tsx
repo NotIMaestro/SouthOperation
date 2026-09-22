@@ -1,17 +1,12 @@
-import { PackageCheck } from "lucide-react";
-
-import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
+import { PickupPage } from "@/components/pickup/pickup-page";
 
-export default function PickupPage() {
+export const metadata = { title: "איסוף חבילות" };
+export default function CollectionPage() {
   return (
-    <main className="page-shell">
-      <PageHeader title="איסוף חבילות" description="ריכוז חבילות הממתינות לאיסוף והעברה" />
-      <EmptyState
-        icon={PackageCheck}
-        title="אין חבילות לאיסוף"
-        description="חבילות שימתינו לאיסוף יוצגו כאן."
-      />
+    <main className="page-shell package-page" dir="rtl" lang="he" tabIndex={-1}>
+      <PageHeader title="איסוף חבילות" description="בחרו את החבילות שהגיעו אליכם ואשרו שכל הפריטים בתוכן התקבלו במלואם וללא נזק." />
+      <PickupPage />
     </main>
   );
 }

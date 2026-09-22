@@ -10,6 +10,14 @@ vi.mock("@/lib/packages/camera", () => ({
 }));
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 describe("camera preview lifecycle", () => {
+  it("stops the collection camera when the document becomes hidden", () => {
+    const close = vi.fn();
+    render(<CameraPreview collection onDecoded={vi.fn()} onError={vi.fn()} onClose={close} />);
+    vi.spyOn(document, "hidden", "get").mockReturnValue(true);
+    document.dispatchEvent(new Event("visibilitychange"));
+    expect(mocks.stop).toHaveBeenCalled(); expect(close).toHaveBeenCalledTimes(1);
+    vi.restoreAllMocks();
+  });
   it("stops the camera on unmount, including route navigation", () => {
     const { unmount } = render(<CameraPreview onDecoded={vi.fn()} onError={vi.fn()} onClose={vi.fn()} />);
     expect(mocks.start).toHaveBeenCalledTimes(1);

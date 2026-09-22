@@ -3,6 +3,7 @@ import { createCameraDecoder, type CameraDecoder } from "./qr";
 
 export function cameraErrorMessage(error: unknown): string {
   const name = error instanceof Error ? error.name : "";
+  if (name === "NotSupportedError") return "הדפדפן אינו מאפשר גישה למצלמה. פתחו בחיבור מאובטח (HTTPS), העלו תמונה או הזינו מספר חבילה.";
   if (name === "NotAllowedError" || name === "SecurityError") return "הרשאת הגישה למצלמה נדחתה. אפשרו גישה בהגדרות הדפדפן ונסו שוב, או העלו תמונת QR.";
   if (name === "NotFoundError" || name === "OverconstrainedError") return "לא נמצאה מצלמה זמינה. חברו מצלמה, העלו תמונת QR או הזינו את מספר החבילה.";
   if (name === "NotReadableError" || name === "AbortError") return "לא ניתן להפעיל את המצלמה. סגרו יישומים אחרים המשתמשים בה ונסו שוב.";
@@ -24,6 +25,7 @@ export class PackageCamera {
       getStream: () => navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false }),
       createDecoder: createCameraDecoder,
     },
+    private validate = (value: string) => qrTokenSchema.safeParse(value),
   ) {}
 
   async start() {
@@ -52,7 +54,7 @@ export class PackageCamera {
       const value = this.video.readyState >= 2 ? await this.decoder?.decode(this.video) : null;
       if (this.stopped) return;
       if (value) {
-        const parsed = qrTokenSchema.safeParse(value);
+        const parsed = this.validate(value);
         if (parsed.success) {
           this.stop(); // Stop before lookup: the same visible QR can trigger only once.
           this.callbacks.decoded(parsed.data);
