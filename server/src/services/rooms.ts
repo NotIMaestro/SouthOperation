@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull } from "drizzle-orm";
+import { and, asc, count, eq, inArray, isNull } from "drizzle-orm";
 
 import { getDb } from "../db";
 import { auditEvents, exportOutbox, groups, locations, rooms } from "../db/schema";
@@ -27,6 +27,23 @@ export async function listRooms(groupId: string) {
     .from(rooms)
     .where(and(eq(rooms.groupId, groupId), isNull(rooms.archivedAt)))
     .orderBy(asc(rooms.name));
+}
+
+export async function countRoomsInProgressForGroups(groupIds: string[]) {
+  if (groupIds.length === 0) return 0;
+
+  const [row] = await getDb()
+    .select({ value: count() })
+    .from(rooms)
+    .where(
+      and(
+        inArray(rooms.groupId, groupIds),
+        eq(rooms.status, "in_progress"),
+        isNull(rooms.archivedAt),
+      ),
+    );
+
+  return row.value;
 }
 
 export async function createRoom(

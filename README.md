@@ -8,15 +8,13 @@ Secure, Hebrew-first equipment mapping and relocation system built with Next.js,
 
 ```text
 SouthOperation/
-├── client/                    # Next.js App Router UI and thin HTTP adapters
+├── client/                    # Next.js App Router UI, API routes, and HTTP adapters
 │   ├── src/app/               # Pages and /api/v1 route handlers
 │   ├── src/components/        # Server-first React components
 │   ├── src/lib/               # Client-to-server boundary adapters
 │   ├── src/auth.ts            # Auth.js + Microsoft Entra ID
 │   └── src/proxy.ts           # Protected-route proxy
-├── server/                    # Independent Hono HTTP service
-│   ├── src/app.ts            # HTTP routes and security middleware
-│   ├── src/index.ts          # Local server entry point (port 3001)
+├── server/                    # Shared server-side domain library, loaded by Next.js
 │   ├── src/db/                # Drizzle schema and lazy Postgres client
 │   ├── src/domain/            # Workflow state machines
 │   ├── src/lib/               # Authorization, errors, audit filtering
@@ -25,7 +23,7 @@ SouthOperation/
 └── docs/                      # Legacy Phase 1 reference material
 ```
 
-The workspaces have no package dependency on each other. The browser calls same-origin Next.js route handlers; those handlers authenticate the session and proxy to the independent backend over HTTP. The shared `INTERNAL_API_SECRET` authenticates that private hop, and the backend independently reloads the user and enforces object authorization.
+The browser calls same-origin Next.js route handlers. The Next.js application imports the server-side domain library directly, so there is no separate local API process or port 3001 to start.
 
 ## Security model
 
@@ -56,8 +54,7 @@ Do not run migrations or the development server before completing the link and e
 1. Install dependencies:
 
    ```bash
-   npm install --prefix client
-   npm install --prefix server
+   npm install
    ```
 
 2. Link the existing Vercel project from the repository root:
@@ -75,9 +72,9 @@ Do not run migrations or the development server before completing the link and e
    https://YOUR_PRODUCTION_DOMAIN/api/auth/callback/microsoft-entra-id
    ```
 
-5. Create `client/.env.local` from `client/.env.example` and `server/.env.local` from `server/.env.example`. Use the same high-entropy `INTERNAL_API_SECRET` in both files. Keep `AUTH_SECRET`, the Entra client secret, `INTERNAL_API_SECRET`, `SERVER_API_URL`, and `DATABASE_URL` server-only.
+5. Create `client/.env.local` from `client/.env.example`. Keep `AUTH_SECRET`, the Entra client secret, and `DATABASE_URL` server-only.
 
-6. Pull each Vercel project's development variables locally, then compare key names without printing values. Run the relevant command from `client/` and `server/`:
+6. Pull the client project's development variables locally, then compare key names without printing values. Run this from `client/`:
 
    ```bash
    vercel env pull .env.local --yes
@@ -95,10 +92,7 @@ Do not run migrations or the development server before completing the link and e
    Run it from the repository root with `DATABASE_URL` loaded, or use the
    Supabase SQL editor with the reviewed migration in `server/drizzle/`.
 
-The Vercel project deploys the Next.js client. The Hono API server must also
-be deployed as a separate service and configured with the same
-`INTERNAL_API_SECRET`, plus the Supabase `DATABASE_URL`. Set the client
-`SERVER_API_URL` to that deployed API URL.
+The Vercel project deploys the Next.js application and its route handlers.
 
 8. Add the first administrator directly through an approved database-administration workflow. Store the Entra object ID in `external_subject`; never use a national identifier as an account key.
 
@@ -110,10 +104,8 @@ be deployed as a separate service and configured with the same
 
 ## Vercel project settings
 
-- Client project: Root Directory `client`, Framework Preset `Next.js`
-- Server project: Root Directory `server`, configured as the private API deployment
-- Client `SERVER_API_URL` must target the server deployment; never expose `INTERNAL_API_SECRET` as a public variable
-- Both projects must receive the same independently generated `INTERNAL_API_SECRET`
+- Project Root Directory: `client`, Framework Preset `Next.js`
+- The `server/` workspace is bundled as server-only application code; do not deploy it independently.
 - Production region: nearest organization-approved European region
 - Production deploys remain gated until Entra, Neon, authorization tests, CSP reports, and backups have been reviewed
 
@@ -139,9 +131,17 @@ pnpm db:migrate    # Apply migrations; development first
 - Client proxy: `GET|POST /api/v1/groups`
 - Client proxy: `GET|POST /api/v1/groups/:groupId/rooms`
 - Client proxy: `GET|POST /api/v1/mapping-reports?groupId=:groupId`
+- Client proxy: `GET /api/v1/receiving/transports`
+- Client proxy: `POST /api/v1/receiving/transports/:transportUnitId/complete`
 - Server: the equivalent API is exposed under `/health` and `/v1/*`; `/internal/*` is private
 
 All protected responses use `Cache-Control: no-store`. API expansion should remain versioned and reuse the centralized server authorization policies.
+
+The equipment-receiving flow lives at `/receiving`. It lists only in-transit vehicles in the
+signed-in user's authorized groups, records received and missing packing units and their linked
+items, releases the vehicle with optimistic version checking, appends an audit event, and queues
+the notification through the outbox. The UI requires a second confirmation when any package is
+missing.
 
 ## Current verification
 
@@ -149,7 +149,7 @@ All protected responses use `Cache-Control: no-store`. API expansion should rema
 - ESLint: passing
 - Unit tests: passing
 - Next.js production build: passing
-- Database migration: generated, not applied
+- Equipment-receiving migration: applied to the connected development database
 - Vercel link/env pull: not completed locally
 - Deployment: not performed
 

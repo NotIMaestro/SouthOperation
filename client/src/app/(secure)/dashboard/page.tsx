@@ -12,13 +12,7 @@ import {
 import Link from "next/link";
 
 import { PageHeader } from "@/components/page-header";
-
-const metrics = [
-  { label: "קבוצות פעילות", value: "—", icon: Building2, hint: "ממתין לחיבור נתונים" },
-  { label: "חדרים בתהליך", value: "—", icon: Boxes, hint: "ממתין לחיבור נתונים" },
-  { label: "דוחות שהוגשו", value: "—", icon: ClipboardCheck, hint: "ממתין לחיבור נתונים" },
-  { label: "דורש טיפול", value: "—", icon: AlertTriangle, hint: "ממתין לחיבור נתונים" },
-];
+import { getDashboardMetrics } from "@/lib/server-api";
 
 const primaryTiles = [
   { href: "/packing", label: "אריזה", sub: "אריזת ציוד מחדר", icon: PackageCheck, tone: "tile-red" },
@@ -32,7 +26,31 @@ const secondaryTiles = [
   { href: "/reports", label: "דוחות מיפוי", sub: "בקרת ציוד", icon: ClipboardCheck, tone: "tile-purple" },
 ];
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const metricsResult = await getDashboardMetrics();
+
+  const metrics = [
+    {
+      label: "קבוצות פעילות",
+      value: metricsResult.ok ? String(metricsResult.data.groupCount) : "—",
+      icon: Building2,
+      hint: metricsResult.ok ? "מעודכן לרגע זה" : metricsResult.message,
+    },
+    {
+      label: "חדרים בתהליך",
+      value: metricsResult.ok ? String(metricsResult.data.roomsInProgress) : "—",
+      icon: Boxes,
+      hint: metricsResult.ok ? "מעודכן לרגע זה" : metricsResult.message,
+    },
+    {
+      label: "דוחות שהוגשו",
+      value: metricsResult.ok ? String(metricsResult.data.reportsSubmitted) : "—",
+      icon: ClipboardCheck,
+      hint: metricsResult.ok ? "מעודכן לרגע זה" : metricsResult.message,
+    },
+    { label: "דורש טיפול", value: "—", icon: AlertTriangle, hint: "ממתין לחיבור נתונים" },
+  ];
+
   return (
     <main className="page-shell">
       <PageHeader title="לוח בקרה" description="תמונת מצב תפעולית עדכנית לפי ההרשאות שלך" />

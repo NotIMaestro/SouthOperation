@@ -1,9 +1,11 @@
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, isNull } from "drizzle-orm";
 
 import { getDb } from "../db";
 import {
   auditEvents,
+  categories,
   exportOutbox,
+  itemTypes,
   mappingReports,
   rooms,
   subcategories,
@@ -45,6 +47,48 @@ export async function listReports(groupId: string) {
     .orderBy(desc(mappingReports.createdAt));
 }
 
+export async function countSubmittedReportsForGroups(groupIds: string[]) {
+  if (groupIds.length === 0) return 0;
+
+  const [row] = await getDb()
+    .select({ value: count() })
+    .from(mappingReports)
+    .innerJoin(rooms, eq(mappingReports.roomId, rooms.id))
+    .where(
+      and(
+        inArray(rooms.groupId, groupIds),
+        eq(mappingReports.status, "submitted"),
+        isNull(rooms.archivedAt),
+        isNull(mappingReports.archivedAt),
+      ),
+    );
+
+  return row.value;
+}
+
+export async function listItemCatalog() {
+  return getDb()
+    .select({
+      itemTypeId: itemTypes.id,
+      itemTypeName: itemTypes.name,
+      categoryId: categories.id,
+      categoryName: categories.name,
+      subcategoryId: subcategories.id,
+      subcategoryName: subcategories.name,
+    })
+    .from(subcategories)
+    .innerJoin(categories, eq(subcategories.categoryId, categories.id))
+    .innerJoin(itemTypes, eq(categories.itemTypeId, itemTypes.id))
+    .where(
+      and(
+        isNull(subcategories.archivedAt),
+        isNull(categories.archivedAt),
+        isNull(itemTypes.archivedAt),
+      ),
+    )
+    .orderBy(asc(itemTypes.name), asc(categories.name), asc(subcategories.name));
+}
+
 export async function createReport(
   actor: Actor,
   groupId: string,
@@ -83,6 +127,7 @@ export async function createReport(
   const reportId = crypto.randomUUID();
   const occurredAt = new Date();
 
+  // No review workflow yet: reports go straight to approved so they're immediately packable.
   await db.transaction(async (transaction) => {
     await transaction.insert(mappingReports).values({
       id: reportId,
@@ -95,6 +140,10 @@ export async function createReport(
       target: input.target,
       expiresAt: input.expiresAt,
       reportedBy: actor.id,
+      status: "approved",
+      submittedAt: occurredAt,
+      reviewedBy: actor.id,
+      reviewedAt: occurredAt,
     });
     await transaction.insert(auditEvents).values({
       actorUserId: actor.id,
@@ -115,5 +164,5 @@ export async function createReport(
     });
   });
 
-  return { id: reportId, groupId, ...input, status: "draft" as const };
+  return { id: reportId, groupId, ...input, status: "approved" as const };
 }

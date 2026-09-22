@@ -1,14 +1,21 @@
-import { requireGroupAccess } from "@south-operation/server/authorization";
+import {
+  findInvitedUserBySubject,
+  provisionEnterpriseUser,
+  requireGroupAccess,
+} from "@south-operation/server/authorization";
 import { HttpError } from "@south-operation/server/errors";
-import { findInvitedUserBySubject } from "@south-operation/server/authorization";
 import { listVisibleGroups } from "@south-operation/server/groups";
 import {
   listPackableItems as listPackableItemsSvc,
   listPackingUnits as listPackingUnitsSvc,
   loadRoomForGroup,
 } from "@south-operation/server/packing";
-import { listRooms } from "@south-operation/server/rooms";
-import { listReports } from "@south-operation/server/reports";
+import { countRoomsInProgressForGroups, listRooms } from "@south-operation/server/rooms";
+import {
+  countSubmittedReportsForGroups,
+  listItemCatalog as listItemCatalogSvc,
+  listReports,
+} from "@south-operation/server/reports";
 import {
   listPackingUnitsWithStage as listPackingUnitsWithStageSvc,
   listTransportsForGroup as listTransportsForGroupSvc,
@@ -42,6 +49,7 @@ export type PackableItem = Awaited<ReturnType<typeof listPackableItemsSvc>>[numb
 export type MappingReport = Awaited<ReturnType<typeof listReports>>[number];
 export type Transport = Awaited<ReturnType<typeof listTransportsForGroupSvc>>[number];
 export type PackingUnitStage = Awaited<ReturnType<typeof listPackingUnitsWithStageSvc>>[number];
+export type ItemCatalogEntry = Awaited<ReturnType<typeof listItemCatalogSvc>>[number];
 
 export function listGroups() {
   return attempt(async () => listVisibleGroups(await getActor()));
@@ -94,6 +102,8 @@ export async function resolveInvitedUser(subject: string) {
   return findInvitedUserBySubject(subject);
 }
 
+export { provisionEnterpriseUser };
+
 export function listTransportsForGroup(groupId: string, status?: TransportStatus) {
   return attempt(async () => {
     const actor = await getActor();
@@ -115,5 +125,29 @@ export function listPackingUnitsWithStage(groupId: string) {
     const actor = await getActor();
     await requireGroupAccess(actor, groupId);
     return listPackingUnitsWithStageSvc(groupId);
+  });
+}
+
+export function listItemCatalog() {
+  return attempt(async () => {
+    await getActor();
+    return listItemCatalogSvc();
+  });
+}
+
+export function getDashboardMetrics() {
+  return attempt(async () => {
+    const actor = await getActor();
+    const groups = await listVisibleGroups(actor);
+    const groupIds = groups.map((group) => group.id);
+    const [roomsInProgress, reportsSubmitted] = await Promise.all([
+      countRoomsInProgressForGroups(groupIds),
+      countSubmittedReportsForGroups(groupIds),
+    ]);
+    return {
+      groupCount: groups.length,
+      roomsInProgress,
+      reportsSubmitted,
+    };
   });
 }
