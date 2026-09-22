@@ -8,8 +8,8 @@ import { generateQrPng } from "@/lib/packages/qr";
 import { PackageCard } from "./package-card";
 
 const defaultDraft: PackageDraft = {
-  description: "Demo computer equipment", origin: "Fictional Amber Depot", destination: "Fictional Meadow Hub",
-  responsiblePerson: "Demo Keeper A", status: "CREATED", contents: ["Sample monitor", "Sample keyboard"],
+  description: "ציוד מחשוב לדוגמה", origin: "מחסן ענבר הבדיוני", destination: "מרכז אחו הבדיוני",
+  responsiblePerson: "אחראי לדוגמה א", status: "CREATED", contents: ["מסך לדוגמה", "מקלדת לדוגמה"],
 };
 
 export function QrGenerator() {
@@ -51,7 +51,7 @@ export function QrGenerator() {
     const id = ++sequence.current;
     setBusy(true); setPng(""); setSelected(record); setError("");
     try { const data = await generateQrPng(record.qrToken); if (id === sequence.current) setPng(data); }
-    catch { if (id === sequence.current) setError("The package exists, but its QR label could not be rendered. Select it again to retry."); }
+    catch { if (id === sequence.current) setError("החבילה נשמרה, אך לא ניתן להציג את תווית ה־QR שלה. בחרו בה שוב כדי לנסות מחדש."); }
     finally { if (id === sequence.current) setBusy(false); }
   }
 
@@ -65,7 +65,7 @@ export function QrGenerator() {
       const records = await getAllPackages();
       if (id !== sequence.current) return;
       setPackages(records);
-      setNotice("Demo package saved in this browser. Download the label, then upload it on Scan Package.");
+      setNotice("חבילת ההדגמה נשמרה בדפדפן זה. הורידו את התווית והעלו אותה בעמוד סריקת חבילה.");
       await showLabel(record);
     } catch (cause) { if (id === sequence.current) { setError(packageErrorMessage(cause)); setBusy(false); } }
     finally { actionBusy.current = false; }
@@ -82,7 +82,7 @@ export function QrGenerator() {
       const records = await getAllPackages();
       if (id !== sequence.current) return;
       setPackages(records);
-      setNotice("Locally generated demo packages were reset. All 10 original sample packages are unchanged.");
+      setNotice("חבילות ההדגמה שנוצרו בדפדפן אופסו. כל 10 החבילות המקוריות נשמרו ללא שינוי.");
     } catch (cause) { if (id === sequence.current) setError(packageErrorMessage(cause)); }
     finally { actionBusy.current = false; if (id === sequence.current) setBusy(false); }
   }
@@ -91,8 +91,8 @@ export function QrGenerator() {
     setError(""); setNotice("");
     try {
       if (!navigator.clipboard?.writeText) throw new Error("Unavailable");
-      await navigator.clipboard.writeText(value); setNotice(`${label} copied.`);
-    } catch { setError(`Could not copy ${label.toLowerCase()}. Select the visible text and copy it manually.`); }
+      await navigator.clipboard.writeText(value); setNotice(`${label} הועתק ללוח.`);
+    } catch { setError(`לא ניתן להעתיק את ${label}. סמנו את הטקסט המוצג והעתיקו אותו ידנית.`); }
   }
 
   function download() {
@@ -102,8 +102,8 @@ export function QrGenerator() {
       const link = document.createElement("a");
       link.href = png; link.download = `package-${selected.packageNumber}.png`;
       document.body.appendChild(link); link.click(); link.remove();
-      setNotice("PNG download requested. If it is blocked, allow downloads or save the QR image using your browser.");
-    } catch { setError("Could not start the download. Try saving the displayed QR image instead."); }
+      setNotice("הורדת קובץ PNG התבקשה. אם ההורדה נחסמה, אפשרו הורדות או שמרו את תמונת ה־QR דרך הדפדפן.");
+    } catch { setError("לא ניתן להתחיל בהורדה. נסו לשמור את תמונת ה־QR המוצגת."); }
   }
 
   function print() {
@@ -111,55 +111,55 @@ export function QrGenerator() {
     try {
       if (!labelImage.current?.complete || !labelImage.current.naturalWidth || typeof window.print !== "function") throw new Error("Not ready");
       window.print();
-      setNotice("Print dialog requested. If it did not open, use your browser’s Print command. Only the package label is printed.");
-    } catch { setError("Could not open printing. Download the PNG and print it from your device."); }
+      setNotice("פתיחת חלון ההדפסה התבקשה. אם הוא לא נפתח, השתמשו בפקודת ההדפסה בדפדפן. רק תווית החבילה תודפס.");
+    } catch { setError("לא ניתן לפתוח את חלון ההדפסה. הורידו את קובץ ה־PNG והדפיסו אותו מהמכשיר."); }
   }
 
   return (
     <div className="package-stack">
-      <p className="package-notice">Demo only · Use fictional information. Generated packages stay in this browser and are not shared with other devices or users.</p>
+      <p className="package-notice">להדגמה בלבד · יש להשתמש במידע בדיוני. החבילות שנוצרו נשמרות בדפדפן זה ואינן משותפות עם מכשירים או משתמשים אחרים.</p>
       <div className="generator-grid">
         <section className="panel" aria-labelledby="generator-title">
-          <div className="panel-heading"><div><span className="eyebrow">CREATE A DEMO PACKAGE</span><h2 id="generator-title">A label for every package</h2></div><PackagePlus aria-hidden="true" /></div>
-          <form className="package-form" onSubmit={(event) => { event.preventDefault(); void create(); }}>
-            {([['description', 'Description'], ['origin', 'Origin'], ['destination', 'Destination'], ['responsiblePerson', 'Responsible person']] as const).map(([key, label]) =>
+          <div className="panel-heading"><div><span className="eyebrow">יצירת חבילת הדגמה</span><h2 id="generator-title">תווית לכל חבילה</h2></div><PackagePlus aria-hidden="true" /></div>
+          <form className="package-form" noValidate onSubmit={(event) => { event.preventDefault(); void create(); }}>
+            {([['description', 'תיאור'], ['origin', 'מוצא'], ['destination', 'יעד'], ['responsiblePerson', 'אחראי החבילה']] as const).map(([key, label]) =>
               <label className="package-field" key={key}>{label}<input required maxLength={160} value={draft[key]} disabled={busy} onChange={(event) => setDraft({ ...draft, [key]: event.target.value })} /></label>)}
-            <label className="package-field">Status<select value={draft.status} disabled={busy} onChange={(event) => setDraft({ ...draft, status: event.target.value as PackageDraft["status"] })}>{packageStatuses.map((status) => <option key={status} value={status}>{statusLabels[status]}</option>)}</select></label>
-            <label className="package-field">Contents (one item per line)<textarea required rows={3} maxLength={4800} value={contents} disabled={busy} onChange={(event) => setContents(event.target.value)} /></label>
-            <button className="button primary full" disabled={busy} type="submit"><PackagePlus aria-hidden="true" /> {busy ? "Please wait…" : "Generate Mock Package"}</button>
+            <label className="package-field">מצב<select value={draft.status} disabled={busy} onChange={(event) => setDraft({ ...draft, status: event.target.value as PackageDraft["status"] })}>{packageStatuses.map((status) => <option key={status} value={status}>{statusLabels[status]}</option>)}</select></label>
+            <label className="package-field">תכולה (פריט אחד בכל שורה)<textarea required rows={3} maxLength={4800} value={contents} disabled={busy} onChange={(event) => setContents(event.target.value)} /></label>
+            <button className="button primary full" disabled={busy} type="submit"><PackagePlus aria-hidden="true" /> {busy ? "נא להמתין…" : "יצירת חבילת הדגמה"}</button>
           </form>
         </section>
-        <section className="panel qr-preview-panel" aria-label="QR label preview">
+        <section className="panel qr-preview-panel" aria-label="תצוגה מקדימה של תווית QR">
           {selected ? <>
             <div className="print-label">
-              <span className="eyebrow">FICTIONAL PACKAGE · DEMO LABEL</span>
-              <h2>Package <bdi>{selected.packageNumber}</bdi></h2>
+              <span className="eyebrow">חבילה בדיונית · תווית להדגמה</span>
+              <h2>חבילה <bdi>{selected.packageNumber}</bdi></h2>
               {png ? <>
                 {/* Generated local data URL; image optimization is not applicable. */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img ref={labelImage} className="package-qr-image" src={png} width={320} height={320} alt={`QR code for package ${selected.packageNumber}`} />
-              </> : <p role="status">{busy ? "Rendering QR label…" : "Label unavailable. Select this package below to retry."}</p>}
+                <img ref={labelImage} className="package-qr-image" src={png} width={320} height={320} alt={`קוד QR לחבילה ${selected.packageNumber}`} />
+              </> : <p role="status">{busy ? "יוצרים תווית QR…" : "התווית אינה זמינה. בחרו שוב בחבילה בהמשך כדי לנסות מחדש."}</p>}
               <code className="qr-value">{selected.qrToken}</code>
               <p>{selected.description}</p>
             </div>
-            <dl className="label-identifiers"><dt>Internal ID</dt><dd>{selected.id}</dd></dl>
+            <dl className="label-identifiers"><dt>מזהה פנימי</dt><dd><bdi dir="ltr">{selected.id}</bdi></dd></dl>
             <div className="package-actions">
-              <button className="button primary" disabled={busy || !png} onClick={download}><Download aria-hidden="true" /> Download PNG</button>
-              <button className="button secondary" disabled={busy || !png} onClick={print}><Printer aria-hidden="true" /> Print Label</button>
-              <button className="button secondary" disabled={busy} onClick={() => void copy(selected.qrToken, "QR token")}><Copy aria-hidden="true" /> Copy Token</button>
-              <button className="button secondary" disabled={busy} onClick={() => void copy(selected.packageNumber, "Package number")}><Copy aria-hidden="true" /> Copy Number</button>
+              <button className="button primary" disabled={busy || !png} onClick={download}><Download aria-hidden="true" /> הורדת PNG</button>
+              <button className="button secondary" disabled={busy || !png} onClick={print}><Printer aria-hidden="true" /> הדפסת תווית</button>
+              <button className="button secondary" disabled={busy} onClick={() => void copy(selected.qrToken, "מזהה QR")}><Copy aria-hidden="true" /> העתקת מזהה QR</button>
+              <button className="button secondary" disabled={busy} onClick={() => void copy(selected.packageNumber, "מספר חבילה")}><Copy aria-hidden="true" /> העתקת מספר חבילה</button>
             </div>
-          </> : <div className="camera-placeholder"><QrCode aria-hidden="true" /><strong>Your next label starts here</strong><p>Generate a fictional package or choose a sample below. Its QR will contain only the unique token.</p></div>}
+          </> : <div className="camera-placeholder"><QrCode aria-hidden="true" /><strong>התווית הבאה שלכם מתחילה כאן</strong><p>צרו חבילה בדיונית או בחרו חבילה לדוגמה בהמשך. קוד ה־QR יכיל רק את המזהה הייחודי שלה.</p></div>}
         </section>
       </div>
       {error && <p className="package-notice error" role="alert">{error}</p>}
       <div aria-live="polite" aria-atomic="true">{notice && <p className="package-notice success">{notice}</p>}</div>
       {selected && <PackageCard record={selected} />}
       <section className="panel package-stack" aria-labelledby="saved-title">
-        <div className="panel-heading"><div><h2 id="saved-title">Available demo packages</h2><p>{packages.length} packages · original samples and locally generated records</p></div><button className="button secondary" disabled={busy} onClick={() => { setBusy(true); void refresh(); }}>Refresh List</button></div>
-        <label className="package-field">Choose a package to render its QR<select disabled={busy} value={selected?.id ?? ""} onChange={(event) => { const record = packages.find((p) => p.id === event.target.value); if (record) void showLabel(record); }}><option value="" disabled>Select a demo package</option>{packages.map((record) => <option key={record.id} value={record.id}>{record.packageNumber} · {record.description}</option>)}</select></label>
-        <div className="demo-reset"><p>Reset removes only generated demo records in this browser. The original JSON samples are preserved.</p>
-          {confirmReset ? <div className="package-actions"><span>Reset locally generated packages?</span><button className="button secondary" disabled={busy} onClick={() => void reset()}>Confirm Reset</button><button className="button secondary" disabled={busy} onClick={() => setConfirmReset(false)}>Cancel</button></div> : <button className="button secondary" disabled={busy} onClick={() => setConfirmReset(true)}><RotateCcw aria-hidden="true" /> Reset Locally Generated Packages</button>}
+        <div className="panel-heading"><div><h2 id="saved-title">חבילות הדגמה זמינות</h2><p>{packages.length} חבילות · חבילות מקוריות לדוגמה וחבילות שנוצרו בדפדפן</p></div><button className="button secondary" disabled={busy} onClick={() => { setBusy(true); void refresh(); }}>רענון הרשימה</button></div>
+        <label className="package-field">בחירת חבילה להצגת קוד QR<select disabled={busy} value={selected?.id ?? ""} onChange={(event) => { const record = packages.find((p) => p.id === event.target.value); if (record) void showLabel(record); }}><option value="" disabled>בחרו חבילת הדגמה</option>{packages.map((record) => <option key={record.id} value={record.id}>{record.packageNumber} · {record.description}</option>)}</select></label>
+        <div className="demo-reset"><p>האיפוס מוחק רק חבילות הדגמה שנוצרו בדפדפן זה. החבילות המקוריות לדוגמה נשמרות.</p>
+          {confirmReset ? <div className="package-actions"><span>לאפס את החבילות שנוצרו בדפדפן?</span><button className="button secondary" disabled={busy} onClick={() => void reset()}>אישור האיפוס</button><button className="button secondary" disabled={busy} onClick={() => setConfirmReset(false)}>ביטול</button></div> : <button className="button secondary" disabled={busy} onClick={() => setConfirmReset(true)}><RotateCcw aria-hidden="true" /> איפוס חבילות שנוצרו בדפדפן</button>}
         </div>
       </section>
     </div>

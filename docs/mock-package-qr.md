@@ -1,12 +1,12 @@
 # Mock package QR workflow
 
-Implemented on `codex/local-development`. These changes are intentionally uncommitted; no push or destructive Git operation was performed.
+Implemented on `codex/local-development`. The original feature was saved in commit `205bd55` at the user's request. The subsequent Hebrew translation is a separate working-tree change. Nothing was pushed. See [the Hebrew user guide](mock-package-qr.he.md).
 
 ## Project inspection and design
 
 - Frontend: Next.js 16.3.5 App Router, React 19, TypeScript, server-rendered page shells with client components for browser interactions.
 - Backend: an independent Hono service with existing Neon/Drizzle integration. No database is needed for this prototype; existing backend functionality is unchanged.
-- Styling: the existing CSS variables, panels, buttons, green palette and responsive layout. Tailwind is installed, but there is no component library. New pages use English labels and a local `dir="ltr"` boundary within the existing Hebrew/RTL app.
+- Styling: the existing CSS variables, panels, buttons, green palette and responsive layout. Tailwind is installed, but there is no component library. Both feature pages now use Hebrew labels and RTL layout, including Hebrew status/error messages, fictional sample data, and `he-IL` date formatting. Machine identifiers and QR payloads retain their original format. Previously entered free-text package data is preserved as entered.
 - Icons: existing Lucide React.
 - State: component-local React state and refs; no new global state library.
 - Navigation: the existing server-side `AppShell` now uses a small client `NavigationLink` for active states. A native mobile menu exposes the existing and new routes. The generator is labeled Development / Demo.

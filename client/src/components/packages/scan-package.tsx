@@ -42,7 +42,7 @@ export function ScanPackage() {
       const record = await (mode === "qr" ? findPackageByQrToken(parsed.data) : findPackageByPackageNumber(parsed.data));
       if (id !== operation.current) return;
       if (record) setResult(record);
-      else setError("No package found. Check the label or number. Generated demo packages are available only in the browser where they were created.");
+      else setError("לא נמצאה חבילה. בדקו את התווית או את המספר. חבילות הדגמה שנוצרו זמינות רק בדפדפן שבו נוצרו.");
     } catch (cause) { if (id === operation.current) setError(packageErrorMessage(cause)); }
     finally { if (id === operation.current) { inFlight.current = false; setBusy(false); } }
   }, []);
@@ -51,7 +51,7 @@ export function ScanPackage() {
   function openCamera() {
     setResult(null); setError("");
     if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
-      setError("Camera access is not supported here. Open this app on HTTPS or localhost, or upload a QR image / enter a package number.");
+      setError("הגישה למצלמה אינה נתמכת כאן. פתחו את היישום באמצעות HTTPS או localhost, או העלו תמונת QR / הזינו מספר חבילה.");
       return;
     }
     setCameraOpen(true);
@@ -64,7 +64,7 @@ export function ScanPackage() {
     let token: string;
     try { token = await decodeQrImage(file); }
     catch (cause) {
-      if (id === operation.current) { setError(cause instanceof Error ? cause.message : "Could not decode the image. Please retry."); setBusy(false); inFlight.current = false; }
+      if (id === operation.current) { setError(cause instanceof Error ? cause.message : "לא ניתן לפענח את התמונה. נסו שוב."); setBusy(false); inFlight.current = false; }
       return;
     }
     if (id !== operation.current) return;
@@ -77,33 +77,33 @@ export function ScanPackage() {
     <div className="package-stack">
       <div className="scan-grid">
         <section className="panel scan-panel" aria-labelledby="camera-title">
-          <div className="panel-heading"><div><span className="eyebrow">01 / SCAN A LABEL</span><h2 id="camera-title">Find it with a QR code</h2></div><ScanLine aria-hidden="true" /></div>
+          <div className="panel-heading"><div><span className="eyebrow">01 / סריקת תווית</span><h2 id="camera-title">איתור חבילה באמצעות קוד QR</h2></div><ScanLine aria-hidden="true" /></div>
           {cameraOpen ? <CameraPreview onDecoded={decoded} onError={cameraError} onClose={closeCamera} /> :
-            <div className="camera-placeholder"><ScanLine aria-hidden="true" /><strong>Ready when you are</strong><p>Camera permission is requested only when you open the camera. Nothing is recorded.</p></div>}
+            <div className="camera-placeholder"><ScanLine aria-hidden="true" /><strong>מוכנים לסריקה</strong><p>הרשאת גישה למצלמה תתבקש רק בעת פתיחתה. לא מתבצעת הקלטה.</p></div>}
           <div className="package-actions">
-            {cameraOpen ? <button className="button secondary" onClick={closeCamera}><X aria-hidden="true" /> Close Camera</button> :
-              <button className="button primary" onClick={openCamera} disabled={busy}><Camera aria-hidden="true" /> Open Camera</button>}
+            {cameraOpen ? <button className="button secondary" onClick={closeCamera}><X aria-hidden="true" /> סגירת המצלמה</button> :
+              <button className="button primary" onClick={openCamera} disabled={busy}><Camera aria-hidden="true" /> פתיחת המצלמה</button>}
             <label className={`button secondary upload-button ${busy ? "is-disabled" : ""}`}>
-              <ImageUp aria-hidden="true" /> Upload QR Image
-              <input aria-label="Upload QR Image" type="file" accept="image/png,image/jpeg,image/webp" disabled={busy} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; void upload(file); }} />
+              <ImageUp aria-hidden="true" /> העלאת תמונת QR
+              <input aria-label="העלאת תמונת QR" type="file" accept="image/png,image/jpeg,image/webp" disabled={busy} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; void upload(file); }} />
             </label>
           </div>
-          <p className="package-help">PNG, JPEG or WebP · up to 10 MB. You can upload a label downloaded from the generator on this device.</p>
+          <p className="package-help">PNG, JPEG או WebP · עד 10 מגה־בייט. ניתן להעלות תווית שהורדתם ממחולל הקודים במכשיר זה.</p>
         </section>
         <section className="panel manual-panel" aria-labelledby="manual-title">
-          <div className="panel-heading"><div><span className="eyebrow">02 / ENTER A NUMBER</span><h2 id="manual-title">No camera? No problem.</h2></div><Keyboard aria-hidden="true" /></div>
-          <p className="package-help">Use the six-digit number printed on the package label.</p>
+          <div className="panel-heading"><div><span className="eyebrow">02 / הזנת מספר</span><h2 id="manual-title">אפשר גם בלי מצלמה</h2></div><Keyboard aria-hidden="true" /></div>
+          <p className="package-help">הזינו את המספר בן שש הספרות המודפס על תווית החבילה.</p>
           <form noValidate onSubmit={(event) => { event.preventDefault(); void lookup("number", number); }}>
-            <label className="package-field">Package number<input ref={input} value={number} onChange={(event) => setNumber(event.target.value)} inputMode="numeric" autoComplete="off" placeholder="e.g. 100001" maxLength={30} disabled={busy} /></label>
-            <button className="button primary full" type="submit" disabled={busy}><Search aria-hidden="true" /> {busy ? "Searching…" : "Search"}</button>
+            <label className="package-field">מספר חבילה<input ref={input} value={number} onChange={(event) => setNumber(event.target.value)} inputMode="numeric" autoComplete="off" placeholder="למשל 100001" maxLength={30} disabled={busy} /></label>
+            <button className="button primary full" type="submit" disabled={busy}><Search aria-hidden="true" /> {busy ? "מחפשים…" : "חיפוש"}</button>
           </form>
-          <div className="demo-tip"><strong>Try a sample package</strong><p>Enter <bdi>100001</bdi> for computer equipment in transit, or <bdi>100006</bdi> for a package with an issue.</p></div>
+          <div className="demo-tip"><strong>נסו חבילה לדוגמה</strong><p>הזינו <bdi>100001</bdi> לציוד מחשוב שנמצא בהעברה, או <bdi>100006</bdi> לחבילה שדווחה בה תקלה.</p></div>
         </section>
       </div>
-      <div aria-live="polite" aria-atomic="true">{busy && <p className="package-notice">Reading the label and looking up the package…</p>}</div>
+      <div aria-live="polite" aria-atomic="true">{busy && <p className="package-notice">קוראים את התווית ומחפשים את החבילה…</p>}</div>
       {error && <p className="package-notice error" role="alert">{error}</p>}
-      {result && <section className="package-stack"><h2 ref={resultHeading} tabIndex={-1} className="result-heading">Package found</h2><PackageCard record={result} />
-        <div className="package-actions"><button className="button primary" disabled={busy} onClick={openCamera}><Camera aria-hidden="true" /> Scan Another Package</button><button className="button secondary" disabled={busy} onClick={() => { focusManual.current = true; setResult(null); setError(""); setNumber(""); }}>Enter Another Number</button></div>
+      {result && <section className="package-stack"><h2 ref={resultHeading} tabIndex={-1} className="result-heading">החבילה נמצאה</h2><PackageCard record={result} />
+        <div className="package-actions"><button className="button primary" disabled={busy} onClick={openCamera}><Camera aria-hidden="true" /> סריקת חבילה נוספת</button><button className="button secondary" disabled={busy} onClick={() => { focusManual.current = true; setResult(null); setError(""); setNumber(""); }}>הזנת מספר נוסף</button></div>
       </section>}
     </div>
   );

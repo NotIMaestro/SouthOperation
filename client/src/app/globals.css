@@ -250,6 +250,6 @@ svg { width: 1.15rem; height: 1.15rem; stroke-width: 1.8; }
   body:has(.print-label) { background: white; }
   body:has(.print-label) * { visibility: hidden; }
   body:has(.print-label) .print-label, body:has(.print-label) .print-label * { visibility: visible; }
-  body:has(.print-label) .print-label { position: absolute; top: 0; left: 0; width: 100%; max-width: 100mm; border: 0; color: black; box-shadow: none; }
+  body:has(.print-label) .print-label { position: absolute; top: 0; inset-inline-start: 0; width: 100%; max-width: 100mm; border: 0; color: black; box-shadow: none; }
   body:has(.print-label) .package-qr-image { width: 70mm; height: 70mm; }
 }

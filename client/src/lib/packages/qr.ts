@@ -8,15 +8,15 @@ export async function generateQrPng(token: string): Promise<string> {
 
 export async function decodeQrImage(file: File): Promise<string> {
   if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
-    throw new Error("Choose a PNG, JPEG, or WebP QR image.");
+    throw new Error("בחרו תמונת QR מסוג PNG, JPEG או WebP.");
   }
-  if (file.size > 10 * 1024 * 1024) throw new Error("Choose an image smaller than 10 MB.");
-  const { default: QrScanner } = await import("qr-scanner");
+  if (file.size > 10 * 1024 * 1024) throw new Error("בחרו תמונה שגודלה קטן מ־10 מגה־בייט.");
   try {
+    const { default: QrScanner } = await import("qr-scanner");
     const result = await QrScanner.scanImage(file, { returnDetailedScanResult: true });
     return result.data;
   } catch {
-    throw new Error("No readable QR code was found. Upload a clear image of the complete label.");
+    throw new Error("לא נמצא קוד QR קריא. העלו תמונה ברורה של התווית בשלמותה.");
   }
 }
 

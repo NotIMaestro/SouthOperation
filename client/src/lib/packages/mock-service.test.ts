@@ -76,21 +76,21 @@ describe("mock package service", () => {
   it("reports exhausted collisions and invalid drafts without writing", async () => {
     const { options, saved } = setup();
     const service = createMockPackageService({ ...options, identifiers: () => ({ id: "mock-001", packageNumber: "100001", qrToken: "PKG:A7F3K9M2" }) });
-    await expect(service.generatePackage(draft)).rejects.toThrow("unique identifiers");
+    await expect(service.generatePackage(draft)).rejects.toThrow("מזהים ייחודיים");
     await expect(service.generatePackage({ ...draft, description: "   " })).rejects.toThrow();
     expect(saved.size).toBe(0);
   });
   it("detects corrupted storage and allows resetting it", async () => {
     const { service, saved } = setup();
     saved.set(GENERATED_PACKAGES_KEY, "not json");
-    await expect(service.getAllPackages()).rejects.toThrow("damaged");
+    await expect(service.getAllPackages()).rejects.toThrow("פגום");
     await service.resetGeneratedPackages();
     expect(await service.getAllPackages()).toHaveLength(10);
   });
   it("reports storage failures without claiming a successful generation", async () => {
     const { options, storage, saved } = setup();
     storage.setItem = () => { throw new Error("quota"); };
-    await expect(createMockPackageService(options).generatePackage(draft)).rejects.toThrow("No package was created");
+    await expect(createMockPackageService(options).generatePackage(draft)).rejects.toThrow("לא נוצרה חבילה");
     expect(saved.size).toBe(0);
   });
 });

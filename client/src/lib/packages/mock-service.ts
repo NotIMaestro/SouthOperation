@@ -40,7 +40,7 @@ export function createMockPackageService(options: {
       if (!unique([...generated, ...staticPackages])) throw new Error("Duplicate stored identifiers");
       return generated;
     } catch {
-      throw new PackageServiceError("Local demo storage is unavailable or damaged. Enable browser storage, or reset locally generated packages in the generator.");
+      throw new PackageServiceError("אחסון ההדגמה המקומי אינו זמין או פגום. אפשרו אחסון בדפדפן או אפסו את החבילות המקומיות במחולל הקודים.");
     }
   }
   function all() { return [...read(), ...structuredClone(staticPackages)]; }
@@ -71,7 +71,7 @@ export function createMockPackageService(options: {
       await delay();
       return writeLocked(() => {
         const generated = read();
-        if (generated.length >= 1000) throw new PackageServiceError("Demo storage is full. Reset locally generated packages before creating more.");
+        if (generated.length >= 1000) throw new PackageServiceError("אחסון ההדגמה מלא. אפסו את החבילות שנוצרו בדפדפן לפני יצירת חבילות נוספות.");
         const existing = [...generated, ...staticPackages];
         for (let attempt = 0; attempt < 40; attempt++) {
           const ids = identifiers();
@@ -79,17 +79,17 @@ export function createMockPackageService(options: {
           const now = new Date().toISOString();
           const record = packageSchema.parse({ ...draft, ...ids, createdAt: now, updatedAt: now });
           try { storage().setItem(GENERATED_PACKAGES_KEY, JSON.stringify([...generated, record])); }
-          catch { throw new PackageServiceError("Could not save this demo package. Browser storage may be full or disabled. No package was created."); }
+          catch { throw new PackageServiceError("לא ניתן לשמור את חבילת ההדגמה. ייתכן שאחסון הדפדפן מלא או חסום. לא נוצרה חבילה."); }
           return record;
         }
-        throw new PackageServiceError("Could not generate unique identifiers. Please try again.");
+        throw new PackageServiceError("לא ניתן ליצור מזהים ייחודיים. נסו שוב.");
       });
     },
     async resetGeneratedPackages() {
       await delay();
       await writeLocked(() => {
         try { storage().removeItem(GENERATED_PACKAGES_KEY); }
-        catch { throw new PackageServiceError("Could not reset local demo storage. Check browser storage permissions and retry."); }
+        catch { throw new PackageServiceError("לא ניתן לאפס את אחסון ההדגמה המקומי. בדקו את הרשאות האחסון בדפדפן ונסו שוב."); }
       });
     },
   };

@@ -26,7 +26,7 @@ const links = [
   { href: "/catalog", label: "קטלוג", icon: LibraryBig },
   { href: "/memberships", label: "הרשאות", icon: UsersRound },
   { href: "/audit", label: "יומן ביקורת", icon: FileClock },
-  { href: "/scan-package", label: "Scan Package", icon: ScanLine },
+  { href: "/scan-package", label: "סריקת חבילה", icon: ScanLine },
 ];
 
 function Navigation() {
@@ -34,8 +34,8 @@ function Navigation() {
     {links.map(({ href, label, icon: Icon }) => (
       <NavigationLink href={href} key={href}><Icon aria-hidden="true" /><span>{label}</span></NavigationLink>
     ))}
-    <span className="nav-section-label">Development / Demo</span>
-    <NavigationLink href="/demo/qr-generator"><QrCode aria-hidden="true" /><span>QR Code Generator</span></NavigationLink>
+    <span className="nav-section-label">פיתוח / הדגמה</span>
+    <NavigationLink href="/demo/qr-generator"><QrCode aria-hidden="true" /><span>מחולל קודי QR</span></NavigationLink>
   </>;
 }
 
@@ -76,7 +76,7 @@ export function AppShell({
         <header className="mobile-header">
           <Link aria-label="לוח הבקרה" href="/dashboard"><Waypoints aria-hidden="true" /></Link>
           <span>מעבר דרומה</span>
-          <details className="mobile-navigation"><summary><Menu aria-hidden="true" /><span>Menu</span></summary><nav className="side-nav" aria-label="Mobile navigation"><Navigation /></nav></details>
+          <details className="mobile-navigation"><summary><Menu aria-hidden="true" /><span>תפריט</span></summary><nav className="side-nav" aria-label="ניווט במכשיר נייד"><Navigation /></nav></details>
         </header>
         {children}
       </div>

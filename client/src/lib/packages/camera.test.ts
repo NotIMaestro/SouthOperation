@@ -64,7 +64,7 @@ describe("camera lifetime", () => {
     await camera.start();
     expect(stop).toHaveBeenCalled(); expect(callbacks.error).toHaveBeenCalled();
   });
-  it.each([["NotAllowedError", "permission was denied"], ["NotFoundError", "No camera"], ["NotReadableError", "Close other apps"]])("explains %s", (name, message) => {
+  it.each([["NotAllowedError", "הרשאת הגישה למצלמה נדחתה"], ["NotFoundError", "לא נמצאה מצלמה"], ["NotReadableError", "סגרו יישומים אחרים"]])("explains %s", (name, message) => {
     const error = new Error(); error.name = name;
     expect(cameraErrorMessage(error)).toContain(message);
   });

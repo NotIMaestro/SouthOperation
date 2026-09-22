@@ -8,12 +8,12 @@ export function CameraPreview({ onDecoded, onError, onClose }: {
 }) {
   const video = useRef<HTMLVideoElement>(null);
   const [ready, setReady] = useState(false);
-  const [hint, setHint] = useState("Camera is starting. Allow access when your browser asks.");
+  const [hint, setHint] = useState("המצלמה מופעלת. אשרו גישה כאשר הדפדפן מבקש זאת.");
   useEffect(() => {
     const camera = new PackageCamera(video.current!, {
-      ready() { setReady(true); setHint("Point the camera at a package QR code."); },
+      ready() { setReady(true); setHint("כוונו את המצלמה לקוד ה־QR שעל החבילה."); },
       decoded: onDecoded,
-      invalid() { setHint("Invalid QR format. Use a package label containing PKG: followed by its token. Keep scanning or enter a number below."); },
+      invalid() { setHint("פורמט ה־QR אינו תקין. השתמשו בתווית חבילה המכילה את הקידומת PKG: ואחריה מזהה. המשיכו לסרוק או הזינו מספר למטה."); },
       error(error) { onError(cameraErrorMessage(error)); },
     });
     const close = () => { camera.stop(); onClose(); };
@@ -29,8 +29,8 @@ export function CameraPreview({ onDecoded, onError, onClose }: {
   }, [onClose, onDecoded, onError]);
   return (
     <div className="camera-preview">
-      <video ref={video} muted playsInline aria-label="Live rear camera preview" />
-      <p role="status">{ready ? "Camera active · " : ""}{hint}</p>
+      <video ref={video} muted playsInline aria-label="תצוגה חיה מהמצלמה האחורית" />
+      <p role="status">{ready ? "המצלמה פעילה · " : ""}{hint}</p>
     </div>
   );
 }

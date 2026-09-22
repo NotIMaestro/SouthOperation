@@ -3,10 +3,10 @@ import { createCameraDecoder, type CameraDecoder } from "./qr";
 
 export function cameraErrorMessage(error: unknown): string {
   const name = error instanceof Error ? error.name : "";
-  if (name === "NotAllowedError" || name === "SecurityError") return "Camera permission was denied. Allow camera access in your browser settings, then retry, or upload a QR image.";
-  if (name === "NotFoundError" || name === "OverconstrainedError") return "No camera is available. Connect a camera, upload a QR image, or enter the package number.";
-  if (name === "NotReadableError" || name === "AbortError") return "The camera could not start. Close other apps using it and retry.";
-  return "Camera scanning failed. Retry, upload a QR image, or enter the package number.";
+  if (name === "NotAllowedError" || name === "SecurityError") return "הרשאת הגישה למצלמה נדחתה. אפשרו גישה בהגדרות הדפדפן ונסו שוב, או העלו תמונת QR.";
+  if (name === "NotFoundError" || name === "OverconstrainedError") return "לא נמצאה מצלמה זמינה. חברו מצלמה, העלו תמונת QR או הזינו את מספר החבילה.";
+  if (name === "NotReadableError" || name === "AbortError") return "לא ניתן להפעיל את המצלמה. סגרו יישומים אחרים המשתמשים בה ונסו שוב.";
+  return "הסריקה באמצעות המצלמה נכשלה. נסו שוב, העלו תמונת QR או הזינו את מספר החבילה.";
 }
 
 /** Owns every media track, including permission requests that finish after close. */
