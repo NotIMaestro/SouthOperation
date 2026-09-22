@@ -120,6 +120,11 @@ svg { width: 1.15rem; height: 1.15rem; stroke-width: 1.8; }
 .workspace { min-width: 0; }
 .mobile-header { display: none; }
 .page-shell { width: min(1180px, calc(100% - 3rem)); margin: 0 auto; padding: 3rem 0; }
+.welcome-page { min-height: calc(100vh - 6rem); display: grid; place-items: center; padding: 3rem; }
+.welcome-mark { display: grid; justify-items: center; gap: 1rem; text-align: center; }
+.welcome-icon { display: grid; width: 5.5rem; height: 5.5rem; place-items: center; border-radius: 1.4rem; background: var(--lime); color: var(--brand-strong); box-shadow: 0 18px 40px rgba(23,79,63,0.16); }
+.welcome-icon svg { width: 2.8rem; height: 2.8rem; }
+.welcome-mark h1 { margin: 0; font-size: clamp(2.4rem, 5vw, 4.5rem); letter-spacing: -0.05em; }
 .page-header { display: flex; justify-content: space-between; align-items: end; gap: 1rem; margin-bottom: 2rem; }
 .page-header h1 { margin: 0; font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -0.05em; }
 .page-header p { margin: 0.5rem 0 0; color: var(--muted); }

@@ -19,7 +19,7 @@ const links = [
 ];
 
 const managementLinks = [
-  { href: "/packing", label: "סטטוס חבילות משוייכות", icon: PackageCheck },
+  { href: "/package-status", label: "סטטוס חבילות משוייכות", icon: PackageCheck },
   { href: "/memberships", label: "הצגת בכירים", icon: Waypoints },
   { href: "/logistics", label: "הצגת לוגיסטיקה", icon: Waypoints },
 ];
