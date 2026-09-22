@@ -33,6 +33,126 @@ async function serverRequest(
   });
 }
 
+export type ServerResult<T> = { ok: true; data: T } | { ok: false; message: string };
+
+async function serverGet<T>(
+  path: string,
+  internalUserId: string,
+  schema: z.ZodType<T>,
+): Promise<ServerResult<T>> {
+  try {
+    const response = await serverRequest(path, {}, internalUserId);
+    if (!response.ok) {
+      return { ok: false, message: `הבקשה נכשלה (קוד ${response.status}).` };
+    }
+    const payload = z.object({ data: schema }).parse(await response.json());
+    return { ok: true, data: payload.data };
+  } catch {
+    return { ok: false, message: "לא ניתן להתחבר לשרת. נסו שוב מאוחר יותר." };
+  }
+}
+
+const groupSchema = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  groupCode: z.string(),
+  createdAt: z.string(),
+});
+
+const roomStatusSchema = z.enum(["unstarted", "in_progress", "completed", "archived"]);
+const roomPackingStatusSchema = z.enum(["not_started", "in_packing", "paused", "closed"]);
+const packingUnitTypeSchema = z.enum([
+  "professional_carton",
+  "personal_carton",
+  "pallet",
+  "dolav",
+  "bulk",
+]);
+const packingUnitStatusSchema = z.enum(["awaiting_packing", "packing_in_progress", "closed"]);
+
+const roomSchema = z.object({
+  id: z.uuid(),
+  groupId: z.uuid(),
+  name: z.string(),
+  description: z.string().nullable(),
+  managerName: z.string().nullable(),
+  status: roomStatusSchema,
+  packingStatus: roomPackingStatusSchema,
+});
+
+const roomListItemSchema = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  description: z.string().nullable(),
+  locationId: z.uuid().nullable(),
+  status: roomStatusSchema,
+  packingStatus: roomPackingStatusSchema,
+  startedAt: z.string().nullable(),
+  completedAt: z.string().nullable(),
+});
+
+const packingUnitSchema = z.object({
+  id: z.uuid(),
+  roomId: z.uuid(),
+  unitType: packingUnitTypeSchema,
+  status: packingUnitStatusSchema,
+  unitNumber: z.string().nullable(),
+  destinationBuilding: z.string().nullable(),
+  destinationFloor: z.string().nullable(),
+  destinationRoom: z.string().nullable(),
+  createdAt: z.string(),
+  closedAt: z.string().nullable(),
+});
+
+const packableItemSchema = z.object({
+  mappingReportId: z.uuid(),
+  quantity: z.number(),
+  serialNumber: z.string().nullable(),
+  subcategoryName: z.string(),
+  categoryName: z.string().nullable(),
+  itemTypeName: z.string().nullable(),
+  packedQuantity: z.number(),
+  remainingQuantity: z.number(),
+});
+
+export type Group = z.infer<typeof groupSchema>;
+export type Room = z.infer<typeof roomSchema>;
+export type RoomListItem = z.infer<typeof roomListItemSchema>;
+export type PackingUnit = z.infer<typeof packingUnitSchema>;
+export type PackableItem = z.infer<typeof packableItemSchema>;
+
+export function listGroups(internalUserId: string) {
+  return serverGet("/v1/groups", internalUserId, z.array(groupSchema));
+}
+
+export function getRoom(internalUserId: string, roomId: string) {
+  return serverGet(`/v1/rooms/${encodeURIComponent(roomId)}`, internalUserId, roomSchema);
+}
+
+export function listRoomsForGroup(internalUserId: string, groupId: string) {
+  return serverGet(
+    `/v1/groups/${encodeURIComponent(groupId)}/rooms`,
+    internalUserId,
+    z.array(roomListItemSchema),
+  );
+}
+
+export function listPackingUnitsForRoom(internalUserId: string, roomId: string) {
+  return serverGet(
+    `/v1/rooms/${encodeURIComponent(roomId)}/packing-units`,
+    internalUserId,
+    z.array(packingUnitSchema),
+  );
+}
+
+export function listPackableItems(internalUserId: string, roomId: string) {
+  return serverGet(
+    `/v1/rooms/${encodeURIComponent(roomId)}/packable-items`,
+    internalUserId,
+    z.array(packableItemSchema),
+  );
+}
+
 export async function resolveInvitedUser(subject: string) {
   const response = await serverRequest("/internal/auth/resolve", {
     method: "POST",
