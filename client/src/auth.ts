@@ -9,7 +9,7 @@ type EntraProfile = {
   sub?: string | null;
 };
 
-const isMicrosoftConfigured = () => {
+export const isMicrosoftConfigured = () => {
   const id = process.env.AUTH_MICROSOFT_ENTRA_ID_ID ?? "";
   const secret = process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET ?? "";
   const issuer = process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER ?? "";

@@ -1,5 +1,5 @@
 import { ArrowLeft, Building2, ShieldCheck } from "lucide-react";
-import { redirect } from "next/navigation";
+import { isMicrosoftConfigured, signIn } from "@/auth";
 
 export const metadata = { title: "כניסה" };
 
@@ -14,7 +14,10 @@ export default async function SignInPage() {
         <form
           action={async () => {
             "use server";
-            redirect("/dashboard");
+            await signIn(isMicrosoftConfigured() ? "microsoft-entra-id" : "credentials", {
+              username: "local-admin",
+              redirectTo: "/dashboard",
+            });
           }}
         >
           <button className="button primary full" type="submit">
