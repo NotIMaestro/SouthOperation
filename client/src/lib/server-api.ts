@@ -1,6 +1,9 @@
-import { requireGroupAccess } from "@south-operation/server/authorization";
+import {
+  findInvitedUserBySubject,
+  provisionEnterpriseUser,
+  requireGroupAccess,
+} from "@south-operation/server/authorization";
 import { HttpError } from "@south-operation/server/errors";
-import { findInvitedUserBySubject } from "@south-operation/server/authorization";
 import { listVisibleGroups } from "@south-operation/server/groups";
 import {
   listPackableItems as listPackableItemsSvc,
@@ -85,3 +88,5 @@ export function listReportsForGroup(groupId: string) {
 export async function resolveInvitedUser(subject: string) {
   return findInvitedUserBySubject(subject);
 }
+
+export { provisionEnterpriseUser };

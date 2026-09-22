@@ -7,9 +7,10 @@
     "node": ">=20.19.0"
   },
   "scripts": {
-    "dev": "pnpm --filter @south-operation/client dev",
-    "build": "pnpm --filter @south-operation/client build",
-    "start": "pnpm --filter @south-operation/client start",
+    "dev": "npm --prefix client run dev",
+    "build": "npm --prefix client run build",
+    "start": "npm --prefix client run start",
+    "server:check": "npm --prefix server run typecheck",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit -p server/tsconfig.json && tsc --noEmit -p client/tsconfig.json",
     "test": "vitest run",

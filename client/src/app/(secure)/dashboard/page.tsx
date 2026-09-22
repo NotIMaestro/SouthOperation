@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowUpLeft, Boxes, Building2, ClipboardCheck, TimerReset } from "lucide-react";
+import { AlertTriangle, ArrowUpLeft, Boxes, Building2, ClipboardCheck, PackageCheck, TimerReset } from "lucide-react";
 import Link from "next/link";
 
 import { PageHeader } from "@/components/page-header";
@@ -33,6 +33,7 @@ export default function DashboardPage() {
           <div className="panel-heading"><div><h2>פעולות מהירות</h2><p>קיצורי דרך לתהליכים נפוצים</p></div></div>
           <Link href="/groups">צפייה בקבוצות <ArrowUpLeft /></Link>
           <Link href="/reports">פתיחת דוחות מיפוי <ArrowUpLeft /></Link>
+          <Link href="/receiving">קבלת ציוד <PackageCheck /></Link>
           <Link href="/audit">בדיקת יומן ביקורת <ArrowUpLeft /></Link>
         </article>
       </section>

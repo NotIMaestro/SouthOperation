@@ -12,6 +12,7 @@ import {
   Truck,
   X,
 } from "lucide-react";
+import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 
 type TransportItem = {
@@ -294,7 +295,7 @@ export default function TransportPage() {
           </div>
         </div>
         <div className="quick-actions">
-          <button className="button secondary" type="button"><PackageCheck /> אישור קבלת ציוד</button>
+          <Link className="button secondary" href="/receiving"><PackageCheck /> אישור קבלת ציוד</Link>
           <button className="button secondary" type="button"><CalendarDays /> צפייה בלוח השינועים</button>
         </div>
       </section>
