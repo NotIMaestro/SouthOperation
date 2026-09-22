@@ -83,8 +83,8 @@ export async function createReport(
   const reportId = crypto.randomUUID();
   const occurredAt = new Date();
 
-  await db.batch([
-    db.insert(mappingReports).values({
+  await db.transaction(async (transaction) => {
+    await transaction.insert(mappingReports).values({
       id: reportId,
       roomId: input.roomId,
       subcategoryId: input.subcategoryId,
@@ -95,8 +95,8 @@ export async function createReport(
       target: input.target,
       expiresAt: input.expiresAt,
       reportedBy: actor.id,
-    }),
-    db.insert(auditEvents).values({
+    });
+    await transaction.insert(auditEvents).values({
       actorUserId: actor.id,
       action: "mapping_report.created",
       entityType: "mapping_report",
@@ -105,15 +105,15 @@ export async function createReport(
       requestId,
       metadata: { roomId: input.roomId, quantity: input.quantity },
       occurredAt,
-    }),
-    db.insert(exportOutbox).values({
+    });
+    await transaction.insert(exportOutbox).values({
       eventType: "mapping_report.created",
       entityType: "mapping_report",
       entityId: reportId,
       groupId,
       payload: { reportId, groupId, roomId: input.roomId, occurredAt },
-    }),
-  ]);
+    });
+  });
 
   return { id: reportId, groupId, ...input, status: "draft" as const };
 }
