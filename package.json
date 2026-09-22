@@ -2,7 +2,7 @@
   "name": "south-operation-workspace",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "pnpm@10.12.4",
+  "packageManager": "pnpm@11.19.0",
   "engines": {
     "node": ">=20.19.0"
   },
