@@ -6,6 +6,9 @@ import {
   LayoutDashboard,
   LibraryBig,
   LogOut,
+  Menu,
+  QrCode,
+  ScanLine,
   ShieldCheck,
   UsersRound,
   Waypoints,
@@ -13,6 +16,7 @@ import {
 import Link from "next/link";
 
 import { signOut } from "@/auth";
+import { NavigationLink } from "./navigation-link";
 
 const links = [
   { href: "/dashboard", label: "לוח בקרה", icon: LayoutDashboard },
@@ -22,7 +26,18 @@ const links = [
   { href: "/catalog", label: "קטלוג", icon: LibraryBig },
   { href: "/memberships", label: "הרשאות", icon: UsersRound },
   { href: "/audit", label: "יומן ביקורת", icon: FileClock },
+  { href: "/scan-package", label: "Scan Package", icon: ScanLine },
 ];
+
+function Navigation() {
+  return <>
+    {links.map(({ href, label, icon: Icon }) => (
+      <NavigationLink href={href} key={href}><Icon aria-hidden="true" /><span>{label}</span></NavigationLink>
+    ))}
+    <span className="nav-section-label">Development / Demo</span>
+    <NavigationLink href="/demo/qr-generator"><QrCode aria-hidden="true" /><span>QR Code Generator</span></NavigationLink>
+  </>;
+}
 
 export function AppShell({
   children,
@@ -39,9 +54,7 @@ export function AppShell({
           <span>מעבר דרומה</span>
         </Link>
         <nav className="side-nav" aria-label="ניווט במערכת">
-          {links.map(({ href, label, icon: Icon }) => (
-            <Link href={href} key={href}><Icon aria-hidden="true" /><span>{label}</span></Link>
-          ))}
+          <Navigation />
         </nav>
         <div className="sidebar-footer">
           <span className="secure-chip"><ShieldCheck aria-hidden="true" /> חיבור מאובטח</span>
@@ -63,6 +76,7 @@ export function AppShell({
         <header className="mobile-header">
           <Link aria-label="לוח הבקרה" href="/dashboard"><Waypoints aria-hidden="true" /></Link>
           <span>מעבר דרומה</span>
+          <details className="mobile-navigation"><summary><Menu aria-hidden="true" /><span>Menu</span></summary><nav className="side-nav" aria-label="Mobile navigation"><Navigation /></nav></details>
         </header>
         {children}
       </div>

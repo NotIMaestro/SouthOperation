@@ -9,5 +9,7 @@ export const config = {
     "/catalog/:path*",
     "/memberships/:path*",
     "/audit/:path*",
+    "/scan-package/:path*",
+    "/demo/qr-generator/:path*",
   ],
 };

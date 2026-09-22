@@ -13,7 +13,7 @@
     "build": "pnpm --filter @south-operation/client build",
     "start": "pnpm --parallel --filter @south-operation/client --filter @south-operation/server start",
     "lint": "eslint . --max-warnings=0",
-    "typecheck": "pnpm --filter @south-operation/server exec tsc --noEmit -p tsconfig.json && pnpm --filter @south-operation/client exec tsc --noEmit -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p server/tsconfig.json && tsc --noEmit -p client/tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "db:generate": "dotenv -e .env.local -- drizzle-kit generate --config server/drizzle.config.ts",

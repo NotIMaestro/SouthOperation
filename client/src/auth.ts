@@ -45,7 +45,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt", maxAge: 60 * 60 * 8 },
   pages: { signIn: "/sign-in", error: "/sign-in" },
   callbacks: {
-    async signIn({ profile, user, account }) {
+    async signIn({ profile, account }) {
       if (account?.provider === "credentials") return true;
       if (!profile) return false;
 
