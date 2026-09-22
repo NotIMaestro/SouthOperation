@@ -86,9 +86,9 @@ export async function createGroup(
     createdBy: actor.id,
   };
 
-  await db.batch([
-    db.insert(groups).values(groupRecord),
-    db.insert(auditEvents).values({
+  await db.transaction(async (transaction) => {
+    await transaction.insert(groups).values(groupRecord);
+    await transaction.insert(auditEvents).values({
       actorUserId: actor.id,
       action: "group.created",
       entityType: "group",
@@ -97,15 +97,15 @@ export async function createGroup(
       requestId,
       metadata: safeAuditMetadata({ groupCodeId: input.groupCodeId }),
       occurredAt,
-    }),
-    db.insert(exportOutbox).values({
+    });
+    await transaction.insert(exportOutbox).values({
       eventType: "group.created",
       entityType: "group",
       entityId: groupId,
       groupId,
       payload: { groupId, groupCodeId: input.groupCodeId, occurredAt },
-    }),
-  ]);
+    });
+  });
 
   return { id: groupId, ...input, createdAt: occurredAt };
 }

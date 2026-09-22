@@ -5,17 +5,16 @@ import {
   FileClock,
   LayoutDashboard,
   LibraryBig,
-  LogOut,
   Menu,
   QrCode,
   ScanLine,
   ShieldCheck,
+  Truck,
   UsersRound,
   Waypoints,
 } from "lucide-react";
 import Link from "next/link";
 
-import { signOut } from "@/auth";
 import { NavigationLink } from "./navigation-link";
 
 const links = [
@@ -27,6 +26,7 @@ const links = [
   { href: "/memberships", label: "הרשאות", icon: UsersRound },
   { href: "/audit", label: "יומן ביקורת", icon: FileClock },
   { href: "/scan-package", label: "סריקת חבילה", icon: ScanLine },
+  { href: "/transport", label: "הובלה", icon: Truck },
 ];
 
 function Navigation() {
@@ -58,18 +58,10 @@ export function AppShell({
         </nav>
         <div className="sidebar-footer">
           <span className="secure-chip"><ShieldCheck aria-hidden="true" /> חיבור מאובטח</span>
-          <form
-            action={async () => {
-              "use server";
-              await signOut({ redirectTo: "/" });
-            }}
-          >
-            <button className="sidebar-user" type="submit">
-              <span className="avatar">{userName.slice(0, 1)}</span>
-              <span><strong>{userName}</strong><small>יציאה מהמערכת</small></span>
-              <LogOut aria-hidden="true" />
-            </button>
-          </form>
+          <div className="sidebar-user">
+            <span className="avatar">מ</span>
+            <span><strong>{userName}</strong><small>מצב מקומי</small></span>
+          </div>
         </div>
       </aside>
       <div className="workspace">

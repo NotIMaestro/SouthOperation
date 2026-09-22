@@ -1,15 +1,3 @@
-export { auth as proxy } from "@/auth";
-
-export const config = {
-  matcher: [
-    "/dashboard/:path*",
-    "/groups/:path*",
-    "/rooms/:path*",
-    "/reports/:path*",
-    "/catalog/:path*",
-    "/memberships/:path*",
-    "/audit/:path*",
-    "/scan-package/:path*",
-    "/demo/qr-generator/:path*",
-  ],
-};
+export function proxy() {
+	// Authentication is disabled until users are introduced.
+}
