@@ -5,6 +5,7 @@ import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { PickupList } from "@/components/transport/pickup-list";
 import { listGroups, listTransportsForGroup } from "@/lib/server-api";
+import { getSelectedGroupIdFromCookie } from "@/lib/selected-group";
 
 export default async function PickupPage({
   searchParams,
@@ -33,12 +34,11 @@ export default async function PickupPage({
     );
   }
 
+  const cookieGroupId = await getSelectedGroupIdFromCookie();
   const activeGroupId =
-    requestedGroupId && groups.some((group) => group.id === requestedGroupId)
-      ? requestedGroupId
-      : groups.length === 1
-        ? groups[0].id
-        : undefined;
+    (requestedGroupId && groups.some((group) => group.id === requestedGroupId) ? requestedGroupId : undefined) ??
+    (cookieGroupId && groups.some((group) => group.id === cookieGroupId) ? cookieGroupId : undefined) ??
+    (groups.length === 1 ? groups[0].id : undefined);
 
   if (!activeGroupId) {
     return (

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { CalendarDays, MapPin, Truck } from "lucide-react";
 
 import type { Transport } from "@/lib/server-api";
+import { getRemembered, setRemembered } from "@/lib/remembered-values";
 
 export function PickupList({ transports }: { transports: Transport[] }) {
   const router = useRouter();
@@ -16,8 +17,8 @@ export function PickupList({ transports }: { transports: Transport[] }) {
 
   function open(transportId: string) {
     setOpenId(transportId);
-    setVehicleType("");
-    setVehicleNumber("");
+    setVehicleType(getRemembered("transport:vehicleType"));
+    setVehicleNumber(getRemembered("transport:vehicleNumber"));
     setError("");
   }
 
@@ -39,6 +40,8 @@ export function PickupList({ transports }: { transports: Transport[] }) {
         setError(payload?.error?.message ?? "אישור האיסוף נכשל.");
         return;
       }
+      setRemembered("transport:vehicleType", vehicleType.trim());
+      setRemembered("transport:vehicleNumber", vehicleNumber.trim());
       setOpenId(null);
       router.refresh();
     } catch {

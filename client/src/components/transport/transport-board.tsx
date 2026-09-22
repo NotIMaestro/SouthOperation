@@ -11,11 +11,12 @@ import {
   PackageCheck,
   Plus,
   Truck,
-  X,
 } from "lucide-react";
 
 import type { Transport } from "@/lib/server-api";
 import { transportStatusLabels } from "@/components/packing/labels";
+import { Modal } from "@/components/modal";
+import { getRemembered, setRemembered } from "@/lib/remembered-values";
 
 type TransportStatus = Transport["status"];
 
@@ -73,8 +74,8 @@ export function TransportBoard({ groupId, transports }: { groupId: string; trans
   function openDetails(transport: Transport) {
     setSelectedId(transport.id);
     setStatusDraft(transport.status);
-    setVehicleTypeDraft(transport.vehicleType ?? "");
-    setVehicleNumberDraft(transport.vehicleNumber ?? "");
+    setVehicleTypeDraft(transport.vehicleType ?? getRemembered("transport:vehicleType"));
+    setVehicleNumberDraft(transport.vehicleNumber ?? getRemembered("transport:vehicleNumber"));
     setStatusError("");
   }
 
@@ -147,6 +148,8 @@ export function TransportBoard({ groupId, transports }: { groupId: string; trans
         setStatusError(payload?.error?.message ?? "עדכון המצב נכשל.");
         return;
       }
+      if (vehicleTypeDraft.trim()) setRemembered("transport:vehicleType", vehicleTypeDraft.trim());
+      if (vehicleNumberDraft.trim()) setRemembered("transport:vehicleNumber", vehicleNumberDraft.trim());
       router.refresh();
     } catch {
       setStatusError("לא ניתן להתחבר לשרת.");
@@ -242,15 +245,12 @@ export function TransportBoard({ groupId, transports }: { groupId: string; trans
       </section>
 
       {selectedTransport && (
-        <div className="transport-modal-backdrop" role="presentation">
-          <section aria-labelledby="transport-details-title" aria-modal="true" className="transport-modal" role="dialog">
-            <div className="transport-modal-header">
-              <div>
-                <span className="eyebrow"><Truck aria-hidden="true" /> {selectedTransport.transportNumber}</span>
-                <h2 id="transport-details-title">פרטי הובלה</h2>
-              </div>
-              <button aria-label="סגירת פרטי ההובלה" className="icon-button" onClick={() => setSelectedId(null)} type="button"><X /></button>
-            </div>
+        <Modal
+          eyebrow={<><Truck aria-hidden="true" /> {selectedTransport.transportNumber}</>}
+          onClose={() => setSelectedId(null)}
+          title="פרטי הובלה"
+          titleId="transport-details-title"
+        >
             <div className="transport-details-grid">
               <div><small>שם יוצר ההובלה</small><strong>{selectedTransport.createdByName}</strong></div>
               <div className="transport-detail-wide"><small>מיקום יציאה</small><strong>{selectedTransport.sourceCity}, {selectedTransport.sourceUnit}, {selectedTransport.sourceBuilding}, חדר {selectedTransport.sourceRoom}</strong></div>
@@ -305,20 +305,16 @@ export function TransportBoard({ groupId, transports }: { groupId: string; trans
                 </button>
               </div>
             )}
-          </section>
-        </div>
+        </Modal>
       )}
 
       {isCreateOpen && (
-        <div className="transport-modal-backdrop" role="presentation">
-          <section aria-labelledby="new-transport-title" aria-modal="true" className="transport-modal" role="dialog">
-            <div className="transport-modal-header">
-              <div>
-                <span className="eyebrow"><Truck aria-hidden="true" /> משימה חדשה</span>
-                <h2 id="new-transport-title">יצירת הובלה חדשה</h2>
-              </div>
-              <button aria-label="סגירת החלונית" className="icon-button" onClick={() => setIsCreateOpen(false)} type="button"><X /></button>
-            </div>
+        <Modal
+          eyebrow={<><Truck aria-hidden="true" /> משימה חדשה</>}
+          onClose={() => setIsCreateOpen(false)}
+          title="יצירת הובלה חדשה"
+          titleId="new-transport-title"
+        >
             <form className="transport-form" onSubmit={createTransport}>
               <label>שם יוצר ההובלה<input name="createdByName" placeholder="לדוגמה: מעוז" required /></label>
               <div className="transport-location-section transport-form-wide">
@@ -349,8 +345,7 @@ export function TransportBoard({ groupId, transports }: { groupId: string; trans
                 <button className="button primary" disabled={creating} type="submit"><Plus /> {creating ? "יוצר..." : "יצירת הובלה"}</button>
               </div>
             </form>
-          </section>
-        </div>
+        </Modal>
       )}
     </>
   );

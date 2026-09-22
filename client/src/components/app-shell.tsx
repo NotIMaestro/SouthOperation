@@ -11,7 +11,10 @@ import {
 import Link from "next/link";
 
 import { signOut } from "@/auth";
+import { listGroups } from "@/lib/server-api";
+import { getSelectedGroupIdFromCookie } from "@/lib/selected-group";
 
+import { GroupSwitcher } from "./group-switcher";
 import { NavigationLink } from "./navigation-link";
 
 const links = [
@@ -71,11 +74,14 @@ function SignOutButton() {
   );
 }
 
-export function AppShell({
+export async function AppShell({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const [groupsResult, selectedGroupId] = await Promise.all([listGroups(), getSelectedGroupIdFromCookie()]);
+  const groups = groupsResult.ok ? groupsResult.data : [];
+
   return (
     <div className="app-frame">
       <aside className="sidebar">
@@ -83,6 +89,7 @@ export function AppShell({
           <span className="brand-mark"><Waypoints aria-hidden="true" /></span>
           <span className="brand-copy"><strong>מעבר דרומה</strong><small>{localGreeting()}</small></span>
         </Link>
+        <GroupSwitcher groups={groups} selectedGroupId={selectedGroupId} />
         <nav className="side-nav" aria-label="ניווט במערכת">
           <Navigation />
         </nav>
@@ -95,7 +102,7 @@ export function AppShell({
         <header className="mobile-header">
           <Link aria-label="לוח הבקרה" href="/dashboard"><Waypoints aria-hidden="true" /></Link>
           <span>מעבר דרומה</span>
-          <details className="mobile-navigation"><summary><Menu aria-hidden="true" /><span>תפריט</span></summary><nav className="side-nav" aria-label="ניווט במכשיר נייד"><Navigation /><SignOutButton /></nav></details>
+          <details className="mobile-navigation"><summary><Menu aria-hidden="true" /><span>תפריט</span></summary><nav className="side-nav" aria-label="ניווט במכשיר נייד"><GroupSwitcher groups={groups} selectedGroupId={selectedGroupId} /><Navigation /><SignOutButton /></nav></details>
         </header>
         {children}
       </div>

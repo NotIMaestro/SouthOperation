@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
+import { Search } from "lucide-react";
 
 import type { PackableItem } from "@/lib/server-api";
 
@@ -18,6 +19,35 @@ export function PackingUnitItemPicker({
   const [selected, setSelected] = useState<SelectionState>({});
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState("");
+
+  const filteredItems = useMemo(() => {
+    const term = filter.trim().toLowerCase();
+    if (!term) return items;
+    return items.filter((item) =>
+      [item.itemTypeName, item.categoryName, item.subcategoryName, item.serialNumber]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .includes(term),
+    );
+  }, [items, filter]);
+
+  const allFilteredSelected =
+    filteredItems.length > 0 && filteredItems.every((item) => item.remainingQuantity <= 0 || selected[item.mappingReportId]?.checked);
+
+  function toggleSelectAll() {
+    setSelected((prev) => {
+      const next = { ...prev };
+      for (const item of filteredItems) {
+        if (item.remainingQuantity <= 0) continue;
+        next[item.mappingReportId] = allFilteredSelected
+          ? { checked: false, quantity: next[item.mappingReportId]?.quantity ?? 1 }
+          : { checked: true, quantity: item.remainingQuantity };
+      }
+      return next;
+    });
+  }
 
   function toggle(reportId: string, remaining: number) {
     setSelected((prev) => {
@@ -76,8 +106,23 @@ export function PackingUnitItemPicker({
     <form className="form-card" onSubmit={handleSubmit}>
       <h2>בחירת פריטים לאריזה</h2>
       <p className="hint">סמנו את הפריטים שנארזו ביחידה זו וציינו כמות.</p>
+      <div className="item-picker-toolbar">
+        <span className="catalog-search-input">
+          <Search aria-hidden="true" />
+          <input
+            aria-label="סינון פריטים"
+            onChange={(event) => setFilter(event.target.value)}
+            placeholder="סינון לפי שם, קטגוריה או מס' סידורי"
+            value={filter}
+          />
+        </span>
+        <button className="button secondary" onClick={toggleSelectAll} type="button">
+          {allFilteredSelected ? "נקה בחירה" : "בחר הכל"}
+        </button>
+      </div>
+      {filteredItems.length === 0 && <p className="hint">לא נמצאו פריטים תואמים לחיפוש.</p>}
       <div className="item-picker">
-        {items.map((item) => {
+        {filteredItems.map((item) => {
           const state = selected[item.mappingReportId];
           const disabled = item.remainingQuantity <= 0;
           return (
