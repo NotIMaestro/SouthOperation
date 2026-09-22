@@ -18,7 +18,8 @@
     "./workflows": "./src/domain/workflows.ts",
     "./groups": "./src/services/groups.ts",
     "./rooms": "./src/services/rooms.ts",
-    "./reports": "./src/services/reports.ts"
+    "./reports": "./src/services/reports.ts",
+    "./packing": "./src/services/packing.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.9",
