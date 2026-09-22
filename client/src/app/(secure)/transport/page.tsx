@@ -110,6 +110,8 @@ export default function TransportPage() {
   const [vehicleTypeDraft, setVehicleTypeDraft] = useState("");
   const [vehicleNumberDraft, setVehicleNumberDraft] = useState("");
   const [statusError, setStatusError] = useState("");
+  const [additionalPackageCount, setAdditionalPackageCount] = useState("");
+  const [additionalPackageSummary, setAdditionalPackageSummary] = useState("");
 
   const filteredTransportItems = transportItems.filter((item) => {
     const searchContent = [item.title, item.id, item.route, item.sourceUnit, item.destinationUnit, item.packageSummary]
@@ -167,6 +169,8 @@ export default function TransportPage() {
     setVehicleTypeDraft(item.vehicleType ?? "");
     setVehicleNumberDraft(item.vehicleNumber ?? "");
     setStatusError("");
+    setAdditionalPackageCount("");
+    setAdditionalPackageSummary("");
   }
 
   function saveTransportStatus() {
@@ -193,8 +197,32 @@ export default function TransportPage() {
       vehicleNumber: vehicleNumberDraft.trim() || selectedTransport.vehicleNumber,
     };
     setTransportItems((items) => items.map((item) => item.id === updatedTransport.id ? updatedTransport : item));
-    setSelectedTransport(updatedTransport);
+    if (statusDraft !== selectedTransport.status) {
+      setSelectedTransport(null);
+    } else {
+      setSelectedTransport(updatedTransport);
+    }
     setStatusError("");
+  }
+
+  function addPackagesToTransport() {
+    if (!selectedTransport || selectedTransport.status !== "waiting") return;
+    const count = Number(additionalPackageCount);
+    const summary = additionalPackageSummary.trim();
+    if (!Number.isInteger(count) || count < 1 || !summary) return;
+    if (!window.confirm(`האם אתה בטוח שברצונך להוסיף ${count} חבילות להובלה ${selectedTransport.id}?`)) return;
+
+    const updatedTransport = {
+      ...selectedTransport,
+      packageCount: selectedTransport.packageCount + count,
+      packageSummary: selectedTransport.packageSummary
+        ? `${selectedTransport.packageSummary}; ${summary}`
+        : summary,
+    };
+    setTransportItems((items) => items.map((item) => item.id === updatedTransport.id ? updatedTransport : item));
+    setSelectedTransport(updatedTransport);
+    setAdditionalPackageCount("");
+    setAdditionalPackageSummary("");
   }
 
   return (
@@ -325,6 +353,28 @@ export default function TransportPage() {
               <div><small>מספר חבילות</small><strong>{selectedTransport.packageCount}</strong></div>
               <div className="transport-detail-wide"><small>מה יש בחבילות</small><strong>{selectedTransport.packageSummary}</strong></div>
             </div>
+            {selectedTransport.status === "waiting" && (
+              <div className="transport-package-editor">
+                <h3>הוספת חבילות</h3>
+                <p>אפשר להוסיף חבילות כל עוד ההובלה ממתינה לאיסוף.</p>
+                <div className="vehicle-fields">
+                  <label>כמה חבילות להוסיף
+                    <input min="1" onChange={(event) => setAdditionalPackageCount(event.target.value)} type="number" value={additionalPackageCount} />
+                  </label>
+                  <label>מה יש בחבילות
+                    <input onChange={(event) => setAdditionalPackageSummary(event.target.value)} placeholder="לדוגמה: ציוד משרדי" value={additionalPackageSummary} />
+                  </label>
+                </div>
+                <button
+                  className="button secondary"
+                  disabled={!additionalPackageCount || !additionalPackageSummary.trim()}
+                  onClick={addPackagesToTransport}
+                  type="button"
+                >
+                  <Plus /> הוספת חבילות
+                </button>
+              </div>
+            )}
             {selectedTransport.status !== "arrived" && (
               <div className="transport-status-editor">
                 <h3>עדכון מצב ההובלה</h3>

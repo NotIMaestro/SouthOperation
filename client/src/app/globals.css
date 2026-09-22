@@ -193,6 +193,9 @@ svg { width: 1.15rem; height: 1.15rem; stroke-width: 1.8; }
 .transport-status-editor { display: grid; gap: 0.75rem; margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--line); }
 .transport-status-editor h3 { margin: 0; font-size: 1rem; }
 .transport-status-editor p { margin: 0; color: var(--muted); font-size: 0.84rem; }
+.transport-package-editor { display: grid; gap: 0.75rem; margin-top: 1.25rem; padding: 1rem 0 0; border-top: 1px solid var(--line); }
+.transport-package-editor h3 { margin: 0; font-size: 1rem; }
+.transport-package-editor p { margin: 0; color: var(--muted); font-size: 0.84rem; }
 .transport-status-editor label, .vehicle-fields label { display: grid; gap: 0.4rem; color: var(--ink); font-size: 0.83rem; font-weight: 700; }
 .transport-status-editor select, .transport-status-editor input { min-height: 2.6rem; border: 1px solid var(--line); border-radius: 0.65rem; padding: 0.65rem 0.75rem; color: var(--ink); background: #fbfcfa; }
 .transport-status-editor select:disabled, .transport-status-editor input:disabled { cursor: not-allowed; opacity: 0.65; }
