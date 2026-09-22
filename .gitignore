@@ -1,0 +1,34 @@
+# dependencies
+node_modules/
+/.pnp
+.pnp.*
+
+# tests and coverage
+/coverage
+
+# next.js
+.next/
+/out/
+
+# production
+/build
+
+# local secrets and Vercel metadata
+.env*.local
+.vercel
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# operating systems and editors
+.DS_Store
+*.pem
+.idea
+.vscode
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts

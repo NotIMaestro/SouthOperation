@@ -1,0 +1,38 @@
+{
+  "name": "south-operation-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.19.0",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @south-operation/client --filter @south-operation/server dev",
+    "dev:client": "pnpm --filter @south-operation/client dev",
+    "dev:server": "pnpm --filter @south-operation/server dev",
+    "build": "pnpm --filter @south-operation/client build",
+    "start": "pnpm --parallel --filter @south-operation/client --filter @south-operation/server start",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "pnpm --filter @south-operation/server exec tsc --noEmit -p tsconfig.json && pnpm --filter @south-operation/client exec tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:generate": "dotenv -e .env.local -- drizzle-kit generate --config server/drizzle.config.ts",
+    "db:migrate": "dotenv -e .env.local -- drizzle-kit migrate --config server/drizzle.config.ts",
+    "db:studio": "dotenv -e .env.local -- drizzle-kit studio --config server/drizzle.config.ts"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.0",
+    "@testing-library/react": "^16.1.0",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "dotenv-cli": "^10.0.0",
+    "drizzle-kit": "^0.31.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "16.3.5",
+    "jsdom": "^26.0.0",
+    "tailwindcss": "^4.1.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}

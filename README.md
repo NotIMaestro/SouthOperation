@@ -1,61 +1,147 @@
-# South Operation (מעבר דרומה)
+# South Operation — מעבר דרומה
 
-Documentation and planning for **South Operation** — the equipment relocation ("Move South")
-initiative: evacuating and relocating tens of thousands of items of professional equipment,
-lab gear, office contents, and personal equipment to a new base.
+Secure, Hebrew-first equipment mapping and relocation system built with Next.js, Microsoft Entra ID, Neon Postgres, and Drizzle ORM.
 
-## Background
+> This public repository must contain synthetic data only. Never commit identities, operational records, secrets, production exports, or infrastructure credentials.
 
-**Phase 1 — room content mapping** is complete. Field teams mapped the contents of every room
-(what equipment is where) before the physical move began. The data model and API that back this
-phase already exist and are documented in [`docs/`](docs/).
+## Repository layout
 
-**Phase 2 — the physical evacuation chain** is the current challenge: packing, loading and
-transport, receiving and unloading, and distribution into destination rooms at the new base,
-end-to-end.
+```text
+SouthOperation/
+├── client/                    # Next.js App Router UI and thin HTTP adapters
+│   ├── src/app/               # Pages and /api/v1 route handlers
+│   ├── src/components/        # Server-first React components
+│   ├── src/lib/               # Client-to-server boundary adapters
+│   ├── src/auth.ts            # Auth.js + Microsoft Entra ID
+│   └── src/proxy.ts           # Protected-route proxy
+├── server/                    # Independent Hono HTTP service
+│   ├── src/app.ts            # HTTP routes and security middleware
+│   ├── src/index.ts          # Local server entry point (port 3001)
+│   ├── src/db/                # Drizzle schema and lazy Neon client
+│   ├── src/domain/            # Workflow state machines
+│   ├── src/lib/               # Authorization, errors, audit filtering
+│   ├── src/services/          # Transactional domain services
+│   └── drizzle/               # Reviewed SQL migrations
+└── docs/                      # Legacy Phase 1 reference material
+```
 
-### The problem on the ground
+The workspaces have no package dependency on each other. The browser calls same-origin Next.js route handlers; those handlers authenticate the session and proxy to the independent backend over HTTP. The shared `INTERNAL_API_SECRET` authenticates that private hop, and the backend independently reloads the user and enforces object authorization.
 
-- **Soldiers and packers in the field** deal with a slow, error-prone, manual process — endless
-  manual item tagging, picking from long lists, and operating a system while carrying boxes,
-  creating bottlenecks, truck delays, and loss of sensitive equipment.
-- **The move commander and staff** need full command and control over a complex operation, but
-  today it's hard to get a unified, reliable, real-time picture: which rooms are ready, where
-  trucks are en route, and which items are missing or lost during unloading.
-- **The army** needs an independent, fast, and secure operational system that guarantees
-  functional continuity and zero equipment loss throughout the transport and relocation.
+## Security model
 
-### The challenge
+- Microsoft Entra ID OIDC with organizational MFA policy.
+- Invite-only, deny-by-default sign-in: an active `users.external_subject` record must already exist.
+- Roles: `admin`, `manager`, `commander`, and `operator`; there is no developer/support production bypass.
+- Admins see all groups. Other roles see only active group memberships; managers alone administer their assigned groups.
+- Opaque UUIDs and explicit foreign keys replace predictable/prefix-derived identifiers.
+- Strict Zod request schemas reject unknown fields and invalid references.
+- The backend rejects unauthenticated direct access with constant-time bearer-secret comparison and does not enable browser CORS.
+- Mutations write audit and export-outbox events in the same Neon batch.
+- `audit_events` is append-only at the database layer.
+- Archives are explicit; ordinary application actions do not hard-delete records.
+- Security headers are set by Next.js. CSP is report-only until Entra and production telemetry have been verified.
+- Errors do not expose stack traces, SQL details, resource existence across authorization boundaries, tokens, or personal data.
 
-Characterize and build, from scratch, an innovative and smart system to manage the evacuation,
-transport, and receiving chain for South Operation equipment. The system should make field
-operations (packing, tagging, receiving, and distribution) fast, simple, and nearly frictionless,
-while giving move management and commanders a live, accurate, insight-driven command view.
+## Local prerequisites
 
-## Documentation
+- Node.js 20.19 or later
+- pnpm 11 or later
+- Vercel CLI authenticated to the organization that owns the connected project
+- A Microsoft Entra app registration owned by the organization
 
-| Document | Description |
-| --- | --- |
-| [docs/SOUTH_OPERATION_ERD.md](docs/SOUTH_OPERATION_ERD.md) | Entity-relationship diagram and full schema reference for the existing `moving_south_operation` database (Phase 1: room mapping) — every table, key, and relationship, including where the code and database disagree. |
-| [docs/SOUTH_OPERATION_API.md](docs/SOUTH_OPERATION_API.md) | Full reference for the existing South Operation API — every model and endpoint, roles, validation, and known quirks. |
-| [docs/מעבר דרומה.docx](docs/מעבר%20דרומה.docx) | Original problem brief (Hebrew) for Phase 2 — the evacuation, transport, and receiving chain. |
+## Bootstrap order
 
-## Existing data model (Phase 1)
+Do not run migrations or the development server before completing the link and environment checks.
 
-The current schema is an equipment-mapping domain:
+1. Install workspace dependencies:
 
-- **Groups** — units/sites, each identified by a numeric ID.
-- **Rooms** — inside a group, each with a mapping status (`waiting` → `inProgress` → done).
-- **Category → SubCategory** — a two-level equipment classification tree, optionally tagged with
-  an **ItemType**.
-- **MappingReport** — the record of what equipment (and how much of it) was found in a room.
-- **UserGroup** — access control: which users may work on which groups.
-- **GroupCodes** — pre-registration of who should get access to a group once it's created under
-  a given code.
+   ```bash
+   pnpm install
+   ```
 
-See [docs/SOUTH_OPERATION_ERD.md](docs/SOUTH_OPERATION_ERD.md) for the full table catalog and
-[docs/SOUTH_OPERATION_API.md](docs/SOUTH_OPERATION_API.md) for every endpoint built on top of it.
+2. Link the existing Vercel project from the repository root:
 
-## Status
+   ```bash
+   vercel link
+   ```
 
-This repository is at the planning stage for Phase 2. No application code has been added yet.
+3. Provision Neon Postgres through the Vercel Marketplace. Use separate Neon branches for development, preview, and production. Never connect a preview deployment to production data.
+
+4. Register the Entra web application as single-tenant and configure these redirect URIs:
+
+   ```text
+   http://localhost:3000/api/auth/callback/microsoft-entra-id
+   https://YOUR_PRODUCTION_DOMAIN/api/auth/callback/microsoft-entra-id
+   ```
+
+5. Create `client/.env.local` from `client/.env.example` and `server/.env.local` from `server/.env.example`. Use the same high-entropy `INTERNAL_API_SECRET` in both files. Keep `AUTH_SECRET`, the Entra client secret, `INTERNAL_API_SECRET`, `SERVER_API_URL`, and `DATABASE_URL` server-only.
+
+6. Pull each Vercel project's development variables locally, then compare key names without printing values. Run the relevant command from `client/` and `server/`:
+
+   ```bash
+   vercel env pull .env.local --yes
+   comm -23 \
+     <(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' .env.example | cut -d '=' -f 1 | sort -u) \
+     <(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' .env.local | cut -d '=' -f 1 | sort -u)
+   ```
+
+7. Apply the reviewed migration to the development branch only:
+
+   ```bash
+   pnpm db:migrate
+   ```
+
+8. Add the first administrator directly through an approved database-administration workflow. Store the Entra object ID in `external_subject`; never use a national identifier as an account key.
+
+9. Start the app:
+
+   ```bash
+   pnpm dev
+   ```
+
+## Vercel project settings
+
+- Client project: Root Directory `client`, Framework Preset `Next.js`
+- Server project: Root Directory `server`, configured as the private API deployment
+- Client `SERVER_API_URL` must target the server deployment; never expose `INTERNAL_API_SECRET` as a public variable
+- Both projects must receive the same independently generated `INTERNAL_API_SECRET`
+- Production region: nearest organization-approved European region
+- Production deploys remain gated until Entra, Neon, authorization tests, CSP reports, and backups have been reviewed
+
+For production, restrict the server deployment to calls from the client project in addition to the application-layer bearer secret. Do not permit direct browser access or add permissive CORS headers.
+
+## Commands
+
+```bash
+pnpm lint          # ESLint, including Next.js and React rules
+pnpm typecheck     # Type-check server and client boundaries
+pnpm test          # Workflow and security unit tests
+pnpm build         # Local production build (does not deploy)
+pnpm dev:client    # Run only Next.js on port 3000
+pnpm dev:server    # Run only the backend on port 3001
+pnpm dev           # Run both independent processes
+pnpm db:generate   # Generate a migration after schema changes
+pnpm db:migrate    # Apply migrations; development first
+```
+
+## API baseline
+
+- Client proxy: `GET /api/v1/health`
+- Client proxy: `GET|POST /api/v1/groups`
+- Client proxy: `GET|POST /api/v1/groups/:groupId/rooms`
+- Client proxy: `GET|POST /api/v1/mapping-reports?groupId=:groupId`
+- Server: the equivalent API is exposed under `/health` and `/v1/*`; `/internal/*` is private
+
+All protected responses use `Cache-Control: no-store`. API expansion should remain versioned and reuse the centralized server authorization policies.
+
+## Current verification
+
+- TypeScript: passing in both workspaces
+- ESLint: passing
+- Unit tests: passing
+- Next.js production build: passing
+- Database migration: generated, not applied
+- Vercel link/env pull: not completed locally
+- Deployment: not performed
+
+The legacy ERD and API documents in `docs/` are reference material. Their known authorization, validation, identifier, status, and soft-delete defects are intentionally not reproduced.
