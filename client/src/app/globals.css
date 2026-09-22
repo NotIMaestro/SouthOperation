@@ -112,6 +112,9 @@ svg { width: 1.15rem; height: 1.15rem; stroke-width: 1.8; }
 .side-nav a:hover { color: white; background: rgba(255,255,255,0.08); }
 .sidebar-footer { margin-top: auto; display: grid; gap: 0.7rem; }
 .secure-chip { display: flex; align-items: center; gap: 0.45rem; color: var(--lime); padding: 0.65rem 0.75rem; font-size: 0.78rem; }
+.sign-out-button { display: flex; width: 100%; min-height: 2.7rem; align-items: center; gap: 0.72rem; border: 1px solid rgba(255,255,255,0.16); border-radius: 0.75rem; padding: 0.65rem 0.75rem; color: rgba(255,255,255,0.8); background: transparent; cursor: pointer; font: inherit; }
+.sign-out-button:hover { color: white; background: rgba(255,255,255,0.08); }
+.sign-out-button:focus-visible { outline: 3px solid rgba(199, 243, 109, 0.7); outline-offset: 2px; }
 .sidebar-user { width: 100%; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 0.65rem; border: 0; border-radius: 0.8rem; padding: 0.75rem; color: white; background: rgba(255,255,255,0.07); cursor: pointer; text-align: start; }
 .sidebar-user span:nth-child(2) { min-width: 0; }
 .sidebar-user strong, .sidebar-user small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

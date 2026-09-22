@@ -14,37 +14,22 @@ type EntraProfile = {
   name?: string | null;
   oid?: string;
   preferred_username?: string | null;
-  roles?: unknown;
   sub?: string | null;
 };
 
-const applicationRoles = ["admin", "manager", "commander", "operator"] as const;
-type ApplicationRole = (typeof applicationRoles)[number];
-
-function applicationRole(profile: EntraProfile): ApplicationRole {
-  const roles = profile.roles;
-  if (!Array.isArray(roles)) return "operator";
-
-  // Enterprise App users with Entra's "Default Access" assignment do not
-  // receive a roles claim. Give those already-authorized users the app's
-  // least-privileged role while preserving any explicit app-role assignment.
-  return applicationRoles.find((role) => roles.includes(role)) ?? "operator";
-}
-
-async function provisionUser(
+async function provisionEntraUser(
   profile: EntraProfile,
   fallbackUser: { id?: string | null; email?: string | null; name?: string | null },
 ) {
   const subject = profile.oid ?? profile.sub ?? fallbackUser.id;
   const email = profile.email ?? profile.preferred_username ?? fallbackUser.email;
-  const role = applicationRole(profile);
   if (!subject || !email) return undefined;
 
   return provisionEnterpriseUser({
     subject,
     email,
     displayName: profile.name?.trim() || fallbackUser.name?.trim() || email,
-    role,
+    role: "operator",
   });
 }
 
@@ -66,7 +51,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (!profile) return false;
 
       try {
-        const internalUser = await provisionUser(profile, user);
+        const internalUser = await provisionEntraUser(profile, user);
         if (!internalUser) return false;
         user.id = internalUser.id;
         return true;

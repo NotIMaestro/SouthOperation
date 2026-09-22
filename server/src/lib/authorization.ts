@@ -9,6 +9,17 @@ export type Actor = {
   role: UserRole;
 };
 
+/** Returns an active user that was provisioned by an administrator. */
+export async function findInvitedUserBySubject(subject: string) {
+  const [user] = await getDb()
+    .select({ id: users.id })
+    .from(users)
+    .where(and(eq(users.externalSubject, subject), eq(users.isActive, true)))
+    .limit(1);
+
+  return user;
+}
+
 export async function provisionEnterpriseUser(input: {
   subject: string;
   email: string;
