@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import { roomPackingStatusLabels, roomStatusLabels } from "@/components/packing/labels";
 import { StatusBadge } from "@/components/packing/status-badge";
 import { listGroups, listRoomsForGroup } from "@/lib/server-api";
+import { getSelectedGroupIdFromCookie } from "@/lib/selected-group";
 
 export default async function PackingPage({
   searchParams,
@@ -34,12 +35,11 @@ export default async function PackingPage({
     );
   }
 
+  const cookieGroupId = await getSelectedGroupIdFromCookie();
   const activeGroupId =
-    requestedGroupId && groups.some((group) => group.id === requestedGroupId)
-      ? requestedGroupId
-      : groups.length === 1
-        ? groups[0].id
-        : undefined;
+    (requestedGroupId && groups.some((group) => group.id === requestedGroupId) ? requestedGroupId : undefined) ??
+    (cookieGroupId && groups.some((group) => group.id === cookieGroupId) ? cookieGroupId : undefined) ??
+    (groups.length === 1 ? groups[0].id : undefined);
 
   if (!activeGroupId) {
     return (

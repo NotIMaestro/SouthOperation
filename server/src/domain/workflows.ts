@@ -3,6 +3,7 @@ import type {
   ReportStatus,
   RoomPackingStatus,
   RoomStatus,
+  TransportStatus,
 } from "../db/schema";
 import { HttpError } from "../lib/errors";
 
@@ -39,6 +40,12 @@ const packingUnitTransitions: Record<
   closed: [],
 };
 
+const transportTransitions: Record<TransportStatus, readonly TransportStatus[]> = {
+  waiting: ["transit"],
+  transit: ["arrived"],
+  arrived: [],
+};
+
 export function assertRoomTransition(from: RoomStatus, to: RoomStatus) {
   if (!roomTransitions[from].includes(to)) {
     throw new HttpError(409, "INVALID_STATE_TRANSITION", "The room status transition is not allowed.");
@@ -66,5 +73,11 @@ export function assertPackingUnitTransition(
 ) {
   if (!packingUnitTransitions[from].includes(to)) {
     throw new HttpError(409, "INVALID_STATE_TRANSITION", "The packing unit status transition is not allowed.");
+  }
+}
+
+export function assertTransportTransition(from: TransportStatus, to: TransportStatus) {
+  if (!transportTransitions[from].includes(to)) {
+    throw new HttpError(409, "INVALID_STATE_TRANSITION", "The transport status transition is not allowed.");
   }
 }

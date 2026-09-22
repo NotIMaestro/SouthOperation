@@ -17,5 +17,6 @@ export default defineConfig([
     "**/node_modules/**",
     "coverage/**",
     "server/drizzle/**",
+    "server/scripts/**",
   ]),
 ]);

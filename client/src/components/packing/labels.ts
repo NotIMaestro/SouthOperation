@@ -1,4 +1,4 @@
-import type { MappingReport, PackingUnit, Room } from "@/lib/server-api";
+import type { MappingReport, PackingUnit, Room, Transport } from "@/lib/server-api";
 
 type BadgeTone = "neutral" | "progress" | "success" | "warning" | "danger";
 
@@ -35,6 +35,12 @@ export const reportStatusLabels: Record<MappingReport["status"], { label: string
   submitted: { label: "הוגש", tone: "progress" },
   approved: { label: "אושר", tone: "success" },
   rejected: { label: "נדחה", tone: "danger" },
+};
+
+export const transportStatusLabels: Record<Transport["status"], { label: string; tone: BadgeTone }> = {
+  waiting: { label: "ממתין לאיסוף", tone: "neutral" },
+  transit: { label: "בדרך ליעד", tone: "progress" },
+  arrived: { label: "הגיע ליעד", tone: "success" },
 };
 
 export type { BadgeTone };

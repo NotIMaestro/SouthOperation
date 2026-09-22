@@ -5,6 +5,7 @@ import {
   auditEvents,
   categories,
   exportOutbox,
+  groups,
   itemTypes,
   mappingReports,
   packingUnitItems,
@@ -12,6 +13,7 @@ import {
   rooms,
   sequenceCounters,
   subcategories,
+  transports,
   type PackingUnitType,
   type RoomPackingStatus,
 } from "../db/schema";
@@ -77,6 +79,57 @@ export async function loadPackingUnitForGroup(packingUnitId: string) {
   return record;
 }
 
+const packingUnitDetailColumns = {
+  id: packingUnits.id,
+  unitType: packingUnits.unitType,
+  status: packingUnits.status,
+  unitNumber: packingUnits.unitNumber,
+  destinationBuilding: packingUnits.destinationBuilding,
+  destinationFloor: packingUnits.destinationFloor,
+  destinationRoom: packingUnits.destinationRoom,
+  roomId: rooms.id,
+  roomName: rooms.name,
+  groupId: rooms.groupId,
+  groupName: groups.name,
+  transportId: packingUnits.transportId,
+  transportNumber: transports.transportNumber,
+  transportStatus: transports.status,
+};
+
+export async function loadPackingUnitDetail(packingUnitId: string) {
+  const [record] = await getDb()
+    .select(packingUnitDetailColumns)
+    .from(packingUnits)
+    .innerJoin(rooms, eq(packingUnits.roomId, rooms.id))
+    .innerJoin(groups, eq(rooms.groupId, groups.id))
+    .leftJoin(transports, eq(packingUnits.transportId, transports.id))
+    .where(and(eq(packingUnits.id, packingUnitId), isNull(packingUnits.archivedAt)))
+    .limit(1);
+
+  if (!record) {
+    throw new HttpError(404, "NOT_FOUND", "The requested resource was not found.");
+  }
+
+  return record;
+}
+
+export async function loadPackingUnitDetailByNumber(unitNumber: string) {
+  const [record] = await getDb()
+    .select(packingUnitDetailColumns)
+    .from(packingUnits)
+    .innerJoin(rooms, eq(packingUnits.roomId, rooms.id))
+    .innerJoin(groups, eq(rooms.groupId, groups.id))
+    .leftJoin(transports, eq(packingUnits.transportId, transports.id))
+    .where(and(eq(packingUnits.unitNumber, unitNumber), isNull(packingUnits.archivedAt)))
+    .limit(1);
+
+  if (!record) {
+    throw new HttpError(404, "NOT_FOUND", "The requested resource was not found.");
+  }
+
+  return record;
+}
+
 export async function listPackingUnits(groupId: string, roomId: string) {
   return getDb()
     .select({
@@ -88,11 +141,15 @@ export async function listPackingUnits(groupId: string, roomId: string) {
       destinationBuilding: packingUnits.destinationBuilding,
       destinationFloor: packingUnits.destinationFloor,
       destinationRoom: packingUnits.destinationRoom,
+      transportId: packingUnits.transportId,
+      transportNumber: transports.transportNumber,
+      transportStatus: transports.status,
       createdAt: packingUnits.createdAt,
       closedAt: packingUnits.closedAt,
     })
     .from(packingUnits)
     .innerJoin(rooms, eq(packingUnits.roomId, rooms.id))
+    .leftJoin(transports, eq(packingUnits.transportId, transports.id))
     .where(
       and(
         eq(packingUnits.roomId, roomId),

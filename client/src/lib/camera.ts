@@ -1,16 +1,15 @@
-import { qrTokenSchema } from "./types";
 import { createCameraDecoder, type CameraDecoder } from "./qr";
 
 export function cameraErrorMessage(error: unknown): string {
   const name = error instanceof Error ? error.name : "";
   if (name === "NotAllowedError" || name === "SecurityError") return "הרשאת הגישה למצלמה נדחתה. אפשרו גישה בהגדרות הדפדפן ונסו שוב, או העלו תמונת QR.";
-  if (name === "NotFoundError" || name === "OverconstrainedError") return "לא נמצאה מצלמה זמינה. חברו מצלמה, העלו תמונת QR או הזינו את מספר החבילה.";
+  if (name === "NotFoundError" || name === "OverconstrainedError") return "לא נמצאה מצלמה זמינה. חברו מצלמה, העלו תמונת QR או הזינו את המזהה.";
   if (name === "NotReadableError" || name === "AbortError") return "לא ניתן להפעיל את המצלמה. סגרו יישומים אחרים המשתמשים בה ונסו שוב.";
-  return "הסריקה באמצעות המצלמה נכשלה. נסו שוב, העלו תמונת QR או הזינו את מספר החבילה.";
+  return "הסריקה באמצעות המצלמה נכשלה. נסו שוב, העלו תמונת QR או הזינו את המזהה.";
 }
 
 /** Owns every media track, including permission requests that finish after close. */
-export class PackageCamera {
+export class QrCamera {
   private stopped = false;
   private stream?: MediaStream;
   private decoder?: CameraDecoder;
@@ -19,7 +18,8 @@ export class PackageCamera {
 
   constructor(
     private video: HTMLVideoElement,
-    private callbacks: { ready(): void; decoded(token: string): void; invalid(): void; error(error: unknown): void },
+    private callbacks: { ready(): void; decoded(value: string): void; invalid(): void; error(error: unknown): void },
+    private isValid: (value: string) => boolean = () => true,
     private dependencies = {
       getStream: () => navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false }),
       createDecoder: createCameraDecoder,
@@ -52,10 +52,9 @@ export class PackageCamera {
       const value = this.video.readyState >= 2 ? await this.decoder?.decode(this.video) : null;
       if (this.stopped) return;
       if (value) {
-        const parsed = qrTokenSchema.safeParse(value);
-        if (parsed.success) {
+        if (this.isValid(value)) {
           this.stop(); // Stop before lookup: the same visible QR can trigger only once.
-          this.callbacks.decoded(parsed.data);
+          this.callbacks.decoded(value);
           return;
         }
         if (value !== this.lastInvalid) { this.lastInvalid = value; this.callbacks.invalid(); }

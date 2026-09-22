@@ -7,16 +7,18 @@
     "node": ">=20.19.0"
   },
   "scripts": {
-    "dev": "pnpm --filter @south-operation/client dev",
-    "build": "pnpm --filter @south-operation/client build",
-    "start": "pnpm --filter @south-operation/client start",
+    "dev": "npm --prefix client run dev",
+    "build": "npm --prefix client run build",
+    "start": "npm --prefix client run start",
+    "server:check": "npm --prefix server run typecheck",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit -p server/tsconfig.json && tsc --noEmit -p client/tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "db:generate": "dotenv -e .env.local -- drizzle-kit generate --config server/drizzle.config.ts",
     "db:migrate": "dotenv -e .env.local -- drizzle-kit migrate --config server/drizzle.config.ts",
-    "db:studio": "dotenv -e .env.local -- drizzle-kit studio --config server/drizzle.config.ts"
+    "db:studio": "dotenv -e .env.local -- drizzle-kit studio --config server/drizzle.config.ts",
+    "db:seed-catalog": "dotenv -e .env.local -- node server/scripts/seed-catalog.cjs"
   },
   "dependencies": {
     "next": "16.3.5"

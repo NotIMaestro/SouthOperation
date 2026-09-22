@@ -1,14 +1,20 @@
 import {
   Menu,
+  LogOut,
   PackageCheck,
   PackageOpen,
-  QrCode,
+  ScanLine,
   ShieldCheck,
   Truck,
   Waypoints,
 } from "lucide-react";
 import Link from "next/link";
 
+import { signOut } from "@/auth";
+import { listGroups } from "@/lib/server-api";
+import { getSelectedGroupIdFromCookie } from "@/lib/selected-group";
+
+import { GroupSwitcher } from "./group-switcher";
 import { NavigationLink } from "./navigation-link";
 
 const links = [
@@ -48,16 +54,34 @@ function Navigation() {
     {managementLinks.map(({ href, label, icon: Icon }) => (
       <NavigationLink href={href} key={href}><Icon aria-hidden="true" /><span>{label}</span></NavigationLink>
     ))}
-    <span className="nav-section-label">פיתוח / הדגמה</span>
-    <NavigationLink href="/demo/qr-generator"><QrCode aria-hidden="true" /><span>מחולל קודי QR</span></NavigationLink>
+    <NavigationLink href="/scan-package"><ScanLine aria-hidden="true" /><span>סריקת יחידת אריזה</span></NavigationLink>
   </>;
 }
 
-export function AppShell({
+function SignOutButton() {
+  return (
+    <form
+      action={async () => {
+        "use server";
+        await signOut({ redirectTo: "/sign-in" });
+      }}
+    >
+      <button className="sign-out-button" type="submit">
+        <LogOut aria-hidden="true" />
+        <span>התנתקות</span>
+      </button>
+    </form>
+  );
+}
+
+export async function AppShell({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const [groupsResult, selectedGroupId] = await Promise.all([listGroups(), getSelectedGroupIdFromCookie()]);
+  const groups = groupsResult.ok ? groupsResult.data : [];
+
   return (
     <div className="app-frame">
       <aside className="sidebar">
@@ -65,18 +89,20 @@ export function AppShell({
           <span className="brand-mark"><Waypoints aria-hidden="true" /></span>
           <span className="brand-copy"><strong>מעבר דרומה</strong><small>{localGreeting()}</small></span>
         </Link>
+        <GroupSwitcher groups={groups} selectedGroupId={selectedGroupId} />
         <nav className="side-nav" aria-label="ניווט במערכת">
           <Navigation />
         </nav>
         <div className="sidebar-footer">
           <span className="secure-chip"><ShieldCheck aria-hidden="true" /> חיבור מאובטח</span>
+          <SignOutButton />
         </div>
       </aside>
       <div className="workspace">
         <header className="mobile-header">
           <Link aria-label="לוח הבקרה" href="/dashboard"><Waypoints aria-hidden="true" /></Link>
           <span>מעבר דרומה</span>
-          <details className="mobile-navigation"><summary><Menu aria-hidden="true" /><span>תפריט</span></summary><nav className="side-nav" aria-label="ניווט במכשיר נייד"><Navigation /></nav></details>
+          <details className="mobile-navigation"><summary><Menu aria-hidden="true" /><span>תפריט</span></summary><nav className="side-nav" aria-label="ניווט במכשיר נייד"><GroupSwitcher groups={groups} selectedGroupId={selectedGroupId} /><Navigation /><SignOutButton /></nav></details>
         </header>
         {children}
       </div>

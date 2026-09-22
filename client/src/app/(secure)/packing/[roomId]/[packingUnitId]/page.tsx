@@ -7,8 +7,14 @@ import { PageHeader } from "@/components/page-header";
 import { packingUnitStatusLabels, packingUnitTypeLabels } from "@/components/packing/labels";
 import { ClosePackingUnitForm } from "@/components/packing/close-packing-unit-form";
 import { PackingUnitItemPicker } from "@/components/packing/packing-unit-item-picker";
+import { PackingUnitQr } from "@/components/packing/packing-unit-qr";
 import { StatusBadge } from "@/components/packing/status-badge";
-import { getRoom, listPackableItems, listPackingUnitsForRoom } from "@/lib/server-api";
+import {
+  getRoom,
+  listPackableItems,
+  listPackingUnitsForRoom,
+  listWaitingTransportsForAssignment,
+} from "@/lib/server-api";
 
 export default async function PackingUnitPage({
   params,
@@ -46,6 +52,10 @@ export default async function PackingUnitPage({
     (unit.status === "awaiting_packing" && unit.unitType === "personal_carton");
 
   const packableItemsResult = needsItemPicker ? await listPackableItems(roomId) : undefined;
+  const waitingTransportsResult =
+    unit.status === "closed" && !unit.transportId
+      ? await listWaitingTransportsForAssignment(room.groupId)
+      : undefined;
 
   return (
     <main className="page-shell">
@@ -62,13 +72,33 @@ export default async function PackingUnitPage({
 
       <div className="stack">
         {unit.status === "closed" ? (
-          <div className="form-card">
-            <h2>האריזה הושלמה</h2>
-            <p className="hint">
-              יעד: {unit.destinationBuilding}
-              {unit.destinationFloor ? ` · קומה ${unit.destinationFloor}` : ""} · חדר {unit.destinationRoom}
-            </p>
-          </div>
+          <>
+            <div className="form-card">
+              <h2>האריזה הושלמה</h2>
+              <p className="hint">
+                יעד: {unit.destinationBuilding}
+                {unit.destinationFloor ? ` · קומה ${unit.destinationFloor}` : ""} · חדר {unit.destinationRoom}
+              </p>
+            </div>
+            {unit.unitNumber && (
+              <PackingUnitQr
+                currentTransport={
+                  unit.transportId && unit.transportNumber && unit.transportStatus
+                    ? { transportNumber: unit.transportNumber, status: unit.transportStatus }
+                    : null
+                }
+                packingUnitId={unit.id}
+                unitNumber={unit.unitNumber}
+                waitingTransports={
+                  unit.transportId
+                    ? []
+                    : waitingTransportsResult?.ok
+                      ? waitingTransportsResult.data
+                      : []
+                }
+              />
+            )}
+          </>
         ) : (
           <>
             {needsItemPicker &&
