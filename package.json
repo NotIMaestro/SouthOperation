@@ -2,7 +2,6 @@
   "name": "south-operation-workspace",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "pnpm@10.12.4",
   "engines": {
     "node": ">=20.19.0"
   },
@@ -10,7 +9,7 @@
     "dev": "pnpm --parallel --filter @south-operation/client --filter @south-operation/server dev",
     "dev:client": "pnpm --filter @south-operation/client dev",
     "dev:server": "pnpm --filter @south-operation/server dev",
-    "build": "pnpm --filter @south-operation/client build",
+    "build": "npm run build --prefix client",
     "start": "pnpm --parallel --filter @south-operation/client --filter @south-operation/server start",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "pnpm --filter @south-operation/server exec tsc --noEmit -p tsconfig.json && pnpm --filter @south-operation/client exec tsc --noEmit -p tsconfig.json",
