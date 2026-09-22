@@ -1,10 +1,5 @@
 import {
-  Boxes,
-  Building2,
-  ClipboardCheck,
-  FileClock,
   LayoutDashboard,
-  LibraryBig,
   Menu,
   QrCode,
   ScanLine,
@@ -19,12 +14,7 @@ import { NavigationLink } from "./navigation-link";
 
 const links = [
   { href: "/dashboard", label: "לוח בקרה", icon: LayoutDashboard },
-  { href: "/groups", label: "קבוצות", icon: Building2 },
-  { href: "/rooms", label: "חדרים", icon: Boxes },
-  { href: "/reports", label: "דוחות מיפוי", icon: ClipboardCheck },
-  { href: "/catalog", label: "קטלוג", icon: LibraryBig },
   { href: "/memberships", label: "הרשאות", icon: UsersRound },
-  { href: "/audit", label: "יומן ביקורת", icon: FileClock },
   { href: "/scan-package", label: "סריקת חבילה", icon: ScanLine },
   { href: "/transport", label: "הובלה", icon: Truck },
 ];
