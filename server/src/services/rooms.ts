@@ -62,9 +62,9 @@ export async function createRoom(
   const roomId = crypto.randomUUID();
   const occurredAt = new Date();
 
-  await db.batch([
-    db.insert(rooms).values({ id: roomId, groupId, ...input }),
-    db.insert(auditEvents).values({
+  await db.transaction(async (transaction) => {
+    await transaction.insert(rooms).values({ id: roomId, groupId, ...input });
+    await transaction.insert(auditEvents).values({
       actorUserId: actor.id,
       action: "room.created",
       entityType: "room",
@@ -73,15 +73,15 @@ export async function createRoom(
       requestId,
       metadata: {},
       occurredAt,
-    }),
-    db.insert(exportOutbox).values({
+    });
+    await transaction.insert(exportOutbox).values({
       eventType: "room.created",
       entityType: "room",
       entityId: roomId,
       groupId,
       payload: { roomId, groupId, occurredAt },
-    }),
-  ]);
+    });
+  });
 
   return { id: roomId, groupId, ...input, status: "unstarted" as const };
 }

@@ -185,14 +185,20 @@ export async function createPackingUnit(
   const packingUnitId = crypto.randomUUID();
   const occurredAt = new Date();
 
-  const statements = [
-    db.insert(packingUnits).values({
+  await db.transaction(async (transaction) => {
+    if (nextRoomPackingStatus !== room.packingStatus) {
+      await transaction
+        .update(rooms)
+        .set({ packingStatus: nextRoomPackingStatus })
+        .where(eq(rooms.id, roomId));
+    }
+    await transaction.insert(packingUnits).values({
       id: packingUnitId,
       roomId,
       unitType: input.unitType,
       createdBy: actor.id,
-    }),
-    db.insert(auditEvents).values({
+    });
+    await transaction.insert(auditEvents).values({
       actorUserId: actor.id,
       action: "packing_unit.created",
       entityType: "packing_unit",
@@ -201,24 +207,15 @@ export async function createPackingUnit(
       requestId,
       metadata: { roomId, unitType: input.unitType },
       occurredAt,
-    }),
-    db.insert(exportOutbox).values({
+    });
+    await transaction.insert(exportOutbox).values({
       eventType: "packing_unit.created",
       entityType: "packing_unit",
       entityId: packingUnitId,
       groupId: room.groupId,
       payload: { packingUnitId, roomId, unitType: input.unitType, occurredAt },
-    }),
-  ] as const;
-
-  if (nextRoomPackingStatus !== room.packingStatus) {
-    await db.batch([
-      db.update(rooms).set({ packingStatus: nextRoomPackingStatus }).where(eq(rooms.id, roomId)),
-      ...statements,
-    ]);
-  } else {
-    await db.batch([...statements]);
-  }
+    });
+  });
 
   return {
     id: packingUnitId,
@@ -301,36 +298,33 @@ export async function setPackingUnitItems(
     }
   }
 
-  const occurredAt = new Date();
-  const upserts = items.map((item) =>
-    db
-      .insert(packingUnitItems)
-      .values({
-        packingUnitId,
-        mappingReportId: item.mappingReportId,
-        quantity: item.quantity,
-      })
-      .onConflictDoUpdate({
-        target: [packingUnitItems.packingUnitId, packingUnitItems.mappingReportId],
-        set: { quantity: item.quantity, updatedAt: occurredAt },
-      }),
-  );
-
   if (unit.status === "awaiting_packing") {
     assertPackingUnitTransition(unit.status, "packing_in_progress");
   }
 
-  const statements = [
-    ...(unit.status === "awaiting_packing"
-      ? [
-          db
-            .update(packingUnits)
-            .set({ status: "packing_in_progress" as const, updatedAt: occurredAt })
-            .where(eq(packingUnits.id, packingUnitId)),
-        ]
-      : []),
-    ...upserts,
-    db.insert(auditEvents).values({
+  const occurredAt = new Date();
+
+  await db.transaction(async (transaction) => {
+    if (unit.status === "awaiting_packing") {
+      await transaction
+        .update(packingUnits)
+        .set({ status: "packing_in_progress", updatedAt: occurredAt })
+        .where(eq(packingUnits.id, packingUnitId));
+    }
+    for (const item of items) {
+      await transaction
+        .insert(packingUnitItems)
+        .values({
+          packingUnitId,
+          mappingReportId: item.mappingReportId,
+          quantity: item.quantity,
+        })
+        .onConflictDoUpdate({
+          target: [packingUnitItems.packingUnitId, packingUnitItems.mappingReportId],
+          set: { quantity: item.quantity, updatedAt: occurredAt },
+        });
+    }
+    await transaction.insert(auditEvents).values({
       actorUserId: actor.id,
       action: "packing_unit.items_set",
       entityType: "packing_unit",
@@ -339,10 +333,8 @@ export async function setPackingUnitItems(
       requestId,
       metadata: { itemCount: items.length },
       occurredAt,
-    }),
-  ];
-
-  await db.batch(statements as never);
+    });
+  });
 
   return { id: packingUnitId, itemCount: items.length };
 }
@@ -386,8 +378,8 @@ export async function closePackingUnit(
   const unitNumber = await nextPackingUnitNumber();
   const occurredAt = new Date();
 
-  await db.batch([
-    db
+  await db.transaction(async (transaction) => {
+    await transaction
       .update(packingUnits)
       .set({
         status: "closed",
@@ -398,8 +390,8 @@ export async function closePackingUnit(
         closedAt: occurredAt,
         updatedAt: occurredAt,
       })
-      .where(eq(packingUnits.id, packingUnitId)),
-    db.insert(auditEvents).values({
+      .where(eq(packingUnits.id, packingUnitId));
+    await transaction.insert(auditEvents).values({
       actorUserId: actor.id,
       action: "packing_unit.closed",
       entityType: "packing_unit",
@@ -408,15 +400,15 @@ export async function closePackingUnit(
       requestId,
       metadata: { unitNumber, roomId: unit.roomId },
       occurredAt,
-    }),
-    db.insert(exportOutbox).values({
+    });
+    await transaction.insert(exportOutbox).values({
       eventType: "packing_unit.closed",
       entityType: "packing_unit",
       entityId: packingUnitId,
       groupId: unit.groupId,
       payload: { packingUnitId, unitNumber, roomId: unit.roomId, occurredAt },
-    }),
-  ]);
+    });
+  });
 
   return { id: packingUnitId, status: "closed" as const, unitNumber };
 }
@@ -451,9 +443,9 @@ async function transitionRoomPacking(
   }
 
   const occurredAt = new Date();
-  await db.batch([
-    db.update(rooms).set({ packingStatus: to }).where(eq(rooms.id, roomId)),
-    db.insert(auditEvents).values({
+  await db.transaction(async (transaction) => {
+    await transaction.update(rooms).set({ packingStatus: to }).where(eq(rooms.id, roomId));
+    await transaction.insert(auditEvents).values({
       actorUserId: actor.id,
       action: to === "closed" ? "room_packing.closed" : "room_packing.paused",
       entityType: "room",
@@ -462,8 +454,8 @@ async function transitionRoomPacking(
       requestId,
       metadata: {},
       occurredAt,
-    }),
-  ]);
+    });
+  });
 
   return { roomId, packingStatus: to };
 }
