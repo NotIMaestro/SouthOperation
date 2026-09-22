@@ -1,3 +1,3 @@
 export function proxy() {
-	// Authentication is disabled until users are introduced.
+  // Authentication is disabled until users are introduced.
 }
