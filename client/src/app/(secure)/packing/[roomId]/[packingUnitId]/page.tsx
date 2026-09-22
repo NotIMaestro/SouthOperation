@@ -1,0 +1,96 @@
+import { PackageCheck } from "lucide-react";
+import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
+
+import { auth } from "@/auth";
+import { EmptyState } from "@/components/empty-state";
+import { PageHeader } from "@/components/page-header";
+import { packingUnitStatusLabels, packingUnitTypeLabels } from "@/components/packing/labels";
+import { ClosePackingUnitForm } from "@/components/packing/close-packing-unit-form";
+import { PackingUnitItemPicker } from "@/components/packing/packing-unit-item-picker";
+import { StatusBadge } from "@/components/packing/status-badge";
+import { getRoom, listPackableItems, listPackingUnitsForRoom } from "@/lib/server-api";
+
+export default async function PackingUnitPage({
+  params,
+}: {
+  params: Promise<{ roomId: string; packingUnitId: string }>;
+}) {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/sign-in");
+  const internalUserId = session.user.id;
+  const { roomId, packingUnitId } = await params;
+
+  const [roomResult, unitsResult] = await Promise.all([
+    getRoom(internalUserId, roomId),
+    listPackingUnitsForRoom(internalUserId, roomId),
+  ]);
+
+  if (!roomResult.ok || !unitsResult.ok) {
+    return (
+      <main className="page-shell">
+        <PageHeader description="פרטי יחידת אריזה" title="אריזה" />
+        <EmptyState
+          description={!roomResult.ok ? roomResult.message : unitsResult.ok ? "" : unitsResult.message}
+          icon={PackageCheck}
+          title="שגיאה בטעינת הנתונים"
+        />
+      </main>
+    );
+  }
+
+  const room = roomResult.data;
+  const unit = unitsResult.data.find((candidate) => candidate.id === packingUnitId);
+  if (!unit) notFound();
+
+  const statusInfo = packingUnitStatusLabels[unit.status];
+  const needsItemPicker = unit.unitType !== "personal_carton" && unit.status !== "closed";
+  const canClose =
+    unit.status === "packing_in_progress" ||
+    (unit.status === "awaiting_packing" && unit.unitType === "personal_carton");
+
+  const packableItemsResult = needsItemPicker
+    ? await listPackableItems(internalUserId, roomId)
+    : undefined;
+
+  return (
+    <main className="page-shell">
+      <p className="breadcrumb">
+        <Link href="/packing">אריזה</Link> / <Link href={`/packing/${roomId}`}>{room.name}</Link> /{" "}
+        {packingUnitTypeLabels[unit.unitType]}
+        {unit.unitNumber ? ` ${unit.unitNumber}` : ""}
+      </p>
+      <PageHeader
+        action={<StatusBadge label={statusInfo.label} tone={statusInfo.tone} />}
+        description={packingUnitTypeLabels[unit.unitType]}
+        title={unit.unitNumber ? `יחידת אריזה ${unit.unitNumber}` : "יחידת אריזה חדשה"}
+      />
+
+      <div className="stack">
+        {unit.status === "closed" ? (
+          <div className="form-card">
+            <h2>האריזה הושלמה</h2>
+            <p className="hint">
+              יעד: {unit.destinationBuilding}
+              {unit.destinationFloor ? ` · קומה ${unit.destinationFloor}` : ""} · חדר {unit.destinationRoom}
+            </p>
+          </div>
+        ) : (
+          <>
+            {needsItemPicker &&
+              (packableItemsResult?.ok ? (
+                <PackingUnitItemPicker items={packableItemsResult.data} packingUnitId={unit.id} />
+              ) : (
+                <EmptyState
+                  description={packableItemsResult?.ok === false ? packableItemsResult.message : ""}
+                  icon={PackageCheck}
+                  title="שגיאה בטעינת הפריטים הממופים"
+                />
+              ))}
+            {canClose && <ClosePackingUnitForm packingUnitId={unit.id} roomId={roomId} />}
+          </>
+        )}
+      </div>
+    </main>
+  );
+}

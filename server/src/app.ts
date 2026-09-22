@@ -14,10 +14,13 @@ import { requireInternalRequest } from "./lib/internal-auth";
 import { createGroup, listVisibleGroups } from "./services/groups";
 import {
   closePackingUnit,
+  closeRoomPacking,
+  listPackableItems,
   listPackingUnits,
   loadPackingUnitForGroup,
   loadRoomForGroup,
   createPackingUnit,
+  pauseRoomPacking,
   setPackingUnitItems,
 } from "./services/packing";
 import { createReport, listReports } from "./services/reports";
@@ -172,6 +175,14 @@ app.post("/v1/mapping-reports", async (context) => {
   return context.json({ data, requestId: requestId(context) }, 201);
 });
 
+app.get("/v1/rooms/:roomId", async (context) => {
+  const roomId = uuidSchema.parse(context.req.param("roomId"));
+  const actor = await actorFrom(context.req.raw);
+  const room = await loadRoomForGroup(roomId);
+  await requireGroupAccess(actor, room.groupId);
+  return context.json({ data: room, requestId: requestId(context) });
+});
+
 app.get("/v1/rooms/:roomId/packing-units", async (context) => {
   const roomId = uuidSchema.parse(context.req.param("roomId"));
   const actor = await actorFrom(context.req.raw);
@@ -207,6 +218,32 @@ app.post("/v1/packing-units/:packingUnitId/close", async (context) => {
   await requireGroupAccess(actor, unit.groupId);
   const input = closePackingUnitSchema.parse(await parseJson(context.req.raw));
   const data = await closePackingUnit(actor, packingUnitId, input, requestId(context));
+  return context.json({ data, requestId: requestId(context) });
+});
+
+app.get("/v1/rooms/:roomId/packable-items", async (context) => {
+  const roomId = uuidSchema.parse(context.req.param("roomId"));
+  const actor = await actorFrom(context.req.raw);
+  const room = await loadRoomForGroup(roomId);
+  await requireGroupAccess(actor, room.groupId);
+  return context.json({ data: await listPackableItems(room.groupId, roomId), requestId: requestId(context) });
+});
+
+app.post("/v1/rooms/:roomId/packing/close", async (context) => {
+  const roomId = uuidSchema.parse(context.req.param("roomId"));
+  const actor = await actorFrom(context.req.raw);
+  const room = await loadRoomForGroup(roomId);
+  await requireGroupAccess(actor, room.groupId);
+  const data = await closeRoomPacking(actor, roomId, requestId(context));
+  return context.json({ data, requestId: requestId(context) });
+});
+
+app.post("/v1/rooms/:roomId/packing/pause", async (context) => {
+  const roomId = uuidSchema.parse(context.req.param("roomId"));
+  const actor = await actorFrom(context.req.raw);
+  const room = await loadRoomForGroup(roomId);
+  await requireGroupAccess(actor, room.groupId);
+  const data = await pauseRoomPacking(actor, roomId, requestId(context));
   return context.json({ data, requestId: requestId(context) });
 });
 

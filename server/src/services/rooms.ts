@@ -20,6 +20,7 @@ export async function listRooms(groupId: string) {
       description: rooms.description,
       locationId: rooms.locationId,
       status: rooms.status,
+      packingStatus: rooms.packingStatus,
       startedAt: rooms.startedAt,
       completedAt: rooms.completedAt,
     })
