@@ -1,5 +1,5 @@
 {
-  "id": "f28e3330-858e-4856-b4ff-96796894567c",
+  "id": "7e151ae3-10f1-4cc5-9655-2157d44e5551",
   "prevId": "b0b24590-b16e-469b-9022-8d36db7b1de9",
   "version": "7",
   "dialect": "postgresql",
@@ -767,14 +767,6 @@
           "notNull": true,
           "default": "'draft'"
         },
-        "movement_status": {
-          "name": "movement_status",
-          "type": "item_movement_status",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'unassigned'"
-        },
         "quantity": {
           "name": "quantity",
           "type": "integer",
@@ -1141,6 +1133,13 @@
       "name": "packing_unit_items",
       "schema": "",
       "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
         "packing_unit_id": {
           "name": "packing_unit_id",
           "type": "uuid",
@@ -1158,9 +1157,44 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {
+        "packing_unit_items_unit_report_uidx": {
+          "name": "packing_unit_items_unit_report_uidx",
+          "columns": [
+            {
+              "expression": "packing_unit_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "mapping_report_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "packing_unit_items_report_idx": {
           "name": "packing_unit_items_report_idx",
           "columns": [
@@ -1205,15 +1239,7 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "packing_unit_items_packing_unit_id_mapping_report_id_pk": {
-          "name": "packing_unit_items_packing_unit_id_mapping_report_id_pk",
-          "columns": [
-            "packing_unit_id",
-            "mapping_report_id"
-          ]
-        }
-      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {
@@ -1235,15 +1261,16 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "group_id": {
-          "name": "group_id",
+        "room_id": {
+          "name": "room_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
-        "serial_number": {
-          "name": "serial_number",
-          "type": "varchar(5)",
+        "unit_type": {
+          "name": "unit_type",
+          "type": "packing_unit_type",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -1253,33 +1280,49 @@
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
-          "default": "'closed'"
+          "default": "'awaiting_packing'"
         },
-        "origin_room_id": {
-          "name": "origin_room_id",
+        "unit_number": {
+          "name": "unit_number",
+          "type": "varchar(5)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "destination_building": {
+          "name": "destination_building",
+          "type": "varchar(160)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "destination_floor": {
+          "name": "destination_floor",
+          "type": "varchar(60)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "destination_room": {
+          "name": "destination_room",
+          "type": "varchar(160)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
-        "destination": {
-          "name": "destination",
-          "type": "varchar(240)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "item_count": {
-          "name": "item_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "updated_at": {
-          "name": "updated_at",
+        "closed_at": {
+          "name": "closed_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
+          "notNull": false
+        },
+        "archived_at": {
+          "name": "archived_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -1287,33 +1330,56 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {
-        "packing_units_serial_number_uidx": {
-          "name": "packing_units_serial_number_uidx",
+        "packing_units_unit_number_uidx": {
+          "name": "packing_units_unit_number_uidx",
           "columns": [
             {
-              "expression": "serial_number",
+              "expression": "unit_number",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             }
           ],
           "isUnique": true,
+          "where": "\"packing_units\".\"unit_number\" IS NOT NULL",
           "concurrently": false,
           "method": "btree",
           "with": {}
         },
-        "packing_units_group_status_idx": {
-          "name": "packing_units_group_status_idx",
+        "packing_units_room_archive_idx": {
+          "name": "packing_units_room_archive_idx",
           "columns": [
             {
-              "expression": "group_id",
+              "expression": "room_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             },
+            {
+              "expression": "archived_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "packing_units_status_idx": {
+          "name": "packing_units_status_idx",
+          "columns": [
             {
               "expression": "status",
               "isExpression": false,
@@ -1328,12 +1394,12 @@
         }
       },
       "foreignKeys": {
-        "packing_units_group_id_groups_id_fk": {
-          "name": "packing_units_group_id_groups_id_fk",
+        "packing_units_room_id_rooms_id_fk": {
+          "name": "packing_units_room_id_rooms_id_fk",
           "tableFrom": "packing_units",
-          "tableTo": "groups",
+          "tableTo": "rooms",
           "columnsFrom": [
-            "group_id"
+            "room_id"
           ],
           "columnsTo": [
             "id"
@@ -1341,12 +1407,12 @@
           "onDelete": "restrict",
           "onUpdate": "no action"
         },
-        "packing_units_origin_room_id_rooms_id_fk": {
-          "name": "packing_units_origin_room_id_rooms_id_fk",
+        "packing_units_created_by_users_id_fk": {
+          "name": "packing_units_created_by_users_id_fk",
           "tableFrom": "packing_units",
-          "tableTo": "rooms",
+          "tableTo": "users",
           "columnsFrom": [
-            "origin_room_id"
+            "created_by"
           ],
           "columnsTo": [
             "id"
@@ -1359,13 +1425,9 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {
-        "packing_units_serial_number_check": {
-          "name": "packing_units_serial_number_check",
-          "value": "\"packing_units\".\"serial_number\" ~ '^[0-9]{5}$'"
-        },
-        "packing_units_item_count_check": {
-          "name": "packing_units_item_count_check",
-          "value": "\"packing_units\".\"item_count\" >= 0"
+        "packing_units_status_check": {
+          "name": "packing_units_status_check",
+          "value": "(\"packing_units\".\"status\" IN ('awaiting_packing', 'packing_in_progress') AND \"packing_units\".\"unit_number\" IS NULL AND \"packing_units\".\"closed_at\" IS NULL) OR (\"packing_units\".\"status\" = 'closed' AND \"packing_units\".\"unit_number\" IS NOT NULL AND \"packing_units\".\"closed_at\" IS NOT NULL AND \"packing_units\".\"destination_building\" IS NOT NULL AND \"packing_units\".\"destination_room\" IS NOT NULL)"
         }
       },
       "isRLSEnabled": false
@@ -1418,6 +1480,14 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'unstarted'"
+        },
+        "packing_status": {
+          "name": "packing_status",
+          "type": "room_packing_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'not_started'"
         },
         "started_at": {
           "name": "started_at",
@@ -1550,6 +1620,32 @@
       },
       "isRLSEnabled": false
     },
+    "public.sequence_counters": {
+      "name": "sequence_counters",
+      "schema": "",
+      "columns": {
+        "key": {
+          "name": "key",
+          "type": "varchar(64)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "value": {
+          "name": "value",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.subcategories": {
       "name": "subcategories",
       "schema": "",
@@ -1643,266 +1739,6 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.transport_packing_units": {
-      "name": "transport_packing_units",
-      "schema": "",
-      "columns": {
-        "transport_unit_id": {
-          "name": "transport_unit_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "packing_unit_id": {
-          "name": "packing_unit_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "loaded_at": {
-          "name": "loaded_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "received_at": {
-          "name": "received_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "received_by": {
-          "name": "received_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "transport_packing_units_packing_idx": {
-          "name": "transport_packing_units_packing_idx",
-          "columns": [
-            {
-              "expression": "packing_unit_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "transport_packing_units_transport_unit_id_transport_units_id_fk": {
-          "name": "transport_packing_units_transport_unit_id_transport_units_id_fk",
-          "tableFrom": "transport_packing_units",
-          "tableTo": "transport_units",
-          "columnsFrom": [
-            "transport_unit_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
-        },
-        "transport_packing_units_packing_unit_id_packing_units_id_fk": {
-          "name": "transport_packing_units_packing_unit_id_packing_units_id_fk",
-          "tableFrom": "transport_packing_units",
-          "tableTo": "packing_units",
-          "columnsFrom": [
-            "packing_unit_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
-        },
-        "transport_packing_units_received_by_users_id_fk": {
-          "name": "transport_packing_units_received_by_users_id_fk",
-          "tableFrom": "transport_packing_units",
-          "tableTo": "users",
-          "columnsFrom": [
-            "received_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "transport_packing_units_transport_unit_id_packing_unit_id_pk": {
-          "name": "transport_packing_units_transport_unit_id_packing_unit_id_pk",
-          "columns": [
-            "transport_unit_id",
-            "packing_unit_id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.transport_units": {
-      "name": "transport_units",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "group_id": {
-          "name": "group_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "license_plate": {
-          "name": "license_plate",
-          "type": "varchar(32)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "transport_unit_status",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'loading'"
-        },
-        "version": {
-          "name": "version",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 1
-        },
-        "departed_at": {
-          "name": "departed_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "released_at": {
-          "name": "released_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_by": {
-          "name": "created_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "transport_units_group_status_idx": {
-          "name": "transport_units_group_status_idx",
-          "columns": [
-            {
-              "expression": "group_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "transport_units_license_plate_idx": {
-          "name": "transport_units_license_plate_idx",
-          "columns": [
-            {
-              "expression": "license_plate",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "transport_units_group_id_groups_id_fk": {
-          "name": "transport_units_group_id_groups_id_fk",
-          "tableFrom": "transport_units",
-          "tableTo": "groups",
-          "columnsFrom": [
-            "group_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
-        },
-        "transport_units_created_by_users_id_fk": {
-          "name": "transport_units_created_by_users_id_fk",
-          "tableFrom": "transport_units",
-          "tableTo": "users",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "transport_units_version_check": {
-          "name": "transport_units_version_check",
-          "value": "\"transport_units\".\"version\" > 0"
-        },
-        "transport_units_status_timestamps_check": {
-          "name": "transport_units_status_timestamps_check",
-          "value": "(\"transport_units\".\"status\" = 'loading' AND \"transport_units\".\"departed_at\" IS NULL AND \"transport_units\".\"released_at\" IS NULL) OR (\"transport_units\".\"status\" = 'in_transit' AND \"transport_units\".\"departed_at\" IS NOT NULL AND \"transport_units\".\"released_at\" IS NULL) OR (\"transport_units\".\"status\" = 'released' AND \"transport_units\".\"departed_at\" IS NOT NULL AND \"transport_units\".\"released_at\" IS NOT NULL)"
-        }
-      },
       "isRLSEnabled": false
     },
     "public.users": {
@@ -2025,18 +1861,6 @@
     }
   },
   "enums": {
-    "public.item_movement_status": {
-      "name": "item_movement_status",
-      "schema": "public",
-      "values": [
-        "unassigned",
-        "packed",
-        "in_transit",
-        "received",
-        "missing",
-        "distributed"
-      ]
-    },
     "public.membership_role": {
       "name": "membership_role",
       "schema": "public",
@@ -2060,11 +1884,20 @@
       "name": "packing_unit_status",
       "schema": "public",
       "values": [
-        "closed",
-        "in_transit",
-        "received",
-        "missing",
-        "surplus_review"
+        "awaiting_packing",
+        "packing_in_progress",
+        "closed"
+      ]
+    },
+    "public.packing_unit_type": {
+      "name": "packing_unit_type",
+      "schema": "public",
+      "values": [
+        "professional_carton",
+        "personal_carton",
+        "pallet",
+        "dolav",
+        "bulk"
       ]
     },
     "public.report_status": {
@@ -2077,6 +1910,16 @@
         "rejected"
       ]
     },
+    "public.room_packing_status": {
+      "name": "room_packing_status",
+      "schema": "public",
+      "values": [
+        "not_started",
+        "in_packing",
+        "paused",
+        "closed"
+      ]
+    },
     "public.room_status": {
       "name": "room_status",
       "schema": "public",
@@ -2085,15 +1928,6 @@
         "in_progress",
         "completed",
         "archived"
-      ]
-    },
-    "public.transport_unit_status": {
-      "name": "transport_unit_status",
-      "schema": "public",
-      "values": [
-        "loading",
-        "in_transit",
-        "released"
       ]
     },
     "public.user_role": {

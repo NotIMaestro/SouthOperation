@@ -49,27 +49,25 @@ export const outboxStatus = pgEnum("outbox_status", [
   "failed",
 ]);
 
-export const transportUnitStatus = pgEnum("transport_unit_status", [
-  "loading",
-  "in_transit",
-  "released",
+export const roomPackingStatus = pgEnum("room_packing_status", [
+  "not_started",
+  "in_packing",
+  "paused",
+  "closed",
+]);
+
+export const packingUnitType = pgEnum("packing_unit_type", [
+  "professional_carton",
+  "personal_carton",
+  "pallet",
+  "dolav",
+  "bulk",
 ]);
 
 export const packingUnitStatus = pgEnum("packing_unit_status", [
+  "awaiting_packing",
+  "packing_in_progress",
   "closed",
-  "in_transit",
-  "received",
-  "missing",
-  "surplus_review",
-]);
-
-export const itemMovementStatus = pgEnum("item_movement_status", [
-  "unassigned",
-  "packed",
-  "in_transit",
-  "received",
-  "missing",
-  "distributed",
 ]);
 
 export const users = pgTable(
@@ -194,6 +192,9 @@ export const rooms = pgTable(
     description: text("description"),
     managerName: varchar("manager_name", { length: 160 }),
     status: roomStatus("status").notNull().default("unstarted"),
+    packingStatus: roomPackingStatus("packing_status")
+      .notNull()
+      .default("not_started"),
     startedAt: timestamp("started_at", { withTimezone: true }),
     completedAt: timestamp("completed_at", { withTimezone: true }),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
@@ -278,9 +279,6 @@ export const mappingReports = pgTable(
       .notNull()
       .references(() => subcategories.id, { onDelete: "restrict" }),
     status: reportStatus("status").notNull().default("draft"),
-    movementStatus: itemMovementStatus("movement_status")
-      .notNull()
-      .default("unassigned"),
     quantity: integer("quantity").notNull().default(1),
     serialNumber: varchar("serial_number", { length: 160 }),
     notes: text("notes"),
@@ -318,97 +316,53 @@ export const mappingReports = pgTable(
   ],
 );
 
-export const transportUnits = pgTable(
-  "transport_units",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    groupId: uuid("group_id")
-      .notNull()
-      .references(() => groups.id, { onDelete: "restrict" }),
-    licensePlate: varchar("license_plate", { length: 32 }).notNull(),
-    status: transportUnitStatus("status").notNull().default("loading"),
-    version: integer("version").notNull().default(1),
-    departedAt: timestamp("departed_at", { withTimezone: true }),
-    releasedAt: timestamp("released_at", { withTimezone: true }),
-    createdBy: uuid("created_by")
-      .notNull()
-      .references(() => users.id, { onDelete: "restrict" }),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-  (table) => [
-    index("transport_units_group_status_idx").on(table.groupId, table.status),
-    index("transport_units_license_plate_idx").on(table.licensePlate),
-    check("transport_units_version_check", sql`${table.version} > 0`),
-    check(
-      "transport_units_status_timestamps_check",
-      sql`(${table.status} = 'loading' AND ${table.departedAt} IS NULL AND ${table.releasedAt} IS NULL) OR (${table.status} = 'in_transit' AND ${table.departedAt} IS NOT NULL AND ${table.releasedAt} IS NULL) OR (${table.status} = 'released' AND ${table.departedAt} IS NOT NULL AND ${table.releasedAt} IS NOT NULL)`,
-    ),
-  ],
-);
+export const sequenceCounters = pgTable("sequence_counters", {
+  key: varchar("key", { length: 64 }).primaryKey(),
+  value: integer("value").notNull().default(0),
+});
 
 export const packingUnits = pgTable(
   "packing_units",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    groupId: uuid("group_id")
+    roomId: uuid("room_id")
       .notNull()
-      .references(() => groups.id, { onDelete: "restrict" }),
-    serialNumber: varchar("serial_number", { length: 5 }).notNull(),
-    status: packingUnitStatus("status").notNull().default("closed"),
-    originRoomId: uuid("origin_room_id").references(() => rooms.id, {
-      onDelete: "restrict",
-    }),
-    destination: varchar("destination", { length: 240 }),
-    itemCount: integer("item_count").notNull().default(0),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .references(() => rooms.id, { onDelete: "restrict" }),
+    unitType: packingUnitType("unit_type").notNull(),
+    status: packingUnitStatus("status").notNull().default("awaiting_packing"),
+    unitNumber: varchar("unit_number", { length: 5 }),
+    destinationBuilding: varchar("destination_building", { length: 160 }),
+    destinationFloor: varchar("destination_floor", { length: 60 }),
+    destinationRoom: varchar("destination_room", { length: 160 }),
+    createdBy: uuid("created_by")
       .notNull()
-      .defaultNow(),
+      .references(() => users.id, { onDelete: "restrict" }),
+    closedAt: timestamp("closed_at", { withTimezone: true }),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
-  },
-  (table) => [
-    uniqueIndex("packing_units_serial_number_uidx").on(table.serialNumber),
-    index("packing_units_group_status_idx").on(table.groupId, table.status),
-    check(
-      "packing_units_serial_number_check",
-      sql`${table.serialNumber} ~ '^[0-9]{5}$'`,
-    ),
-    check("packing_units_item_count_check", sql`${table.itemCount} >= 0`),
-  ],
-);
-
-export const transportPackingUnits = pgTable(
-  "transport_packing_units",
-  {
-    transportUnitId: uuid("transport_unit_id")
-      .notNull()
-      .references(() => transportUnits.id, { onDelete: "restrict" }),
-    packingUnitId: uuid("packing_unit_id")
-      .notNull()
-      .references(() => packingUnits.id, { onDelete: "restrict" }),
-    loadedAt: timestamp("loaded_at", { withTimezone: true })
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
-    receivedAt: timestamp("received_at", { withTimezone: true }),
-    receivedBy: uuid("received_by").references(() => users.id, {
-      onDelete: "restrict",
-    }),
   },
   (table) => [
-    primaryKey({ columns: [table.transportUnitId, table.packingUnitId] }),
-    index("transport_packing_units_packing_idx").on(table.packingUnitId),
+    uniqueIndex("packing_units_unit_number_uidx")
+      .on(table.unitNumber)
+      .where(sql`${table.unitNumber} IS NOT NULL`),
+    index("packing_units_room_archive_idx").on(table.roomId, table.archivedAt),
+    index("packing_units_status_idx").on(table.status),
+    check(
+      "packing_units_status_check",
+      sql`(${table.status} IN ('awaiting_packing', 'packing_in_progress') AND ${table.unitNumber} IS NULL AND ${table.closedAt} IS NULL) OR (${table.status} = 'closed' AND ${table.unitNumber} IS NOT NULL AND ${table.closedAt} IS NOT NULL AND ${table.destinationBuilding} IS NOT NULL AND ${table.destinationRoom} IS NOT NULL)`,
+    ),
   ],
 );
 
 export const packingUnitItems = pgTable(
   "packing_unit_items",
   {
+    id: uuid("id").primaryKey().defaultRandom(),
     packingUnitId: uuid("packing_unit_id")
       .notNull()
       .references(() => packingUnits.id, { onDelete: "restrict" }),
@@ -416,9 +370,18 @@ export const packingUnitItems = pgTable(
       .notNull()
       .references(() => mappingReports.id, { onDelete: "restrict" }),
     quantity: integer("quantity").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
-    primaryKey({ columns: [table.packingUnitId, table.mappingReportId] }),
+    uniqueIndex("packing_unit_items_unit_report_uidx").on(
+      table.packingUnitId,
+      table.mappingReportId,
+    ),
     index("packing_unit_items_report_idx").on(table.mappingReportId),
     check("packing_unit_items_quantity_check", sql`${table.quantity} > 0`),
   ],
@@ -485,6 +448,6 @@ export type UserRole = (typeof userRole.enumValues)[number];
 export type MembershipRole = (typeof membershipRole.enumValues)[number];
 export type RoomStatus = (typeof roomStatus.enumValues)[number];
 export type ReportStatus = (typeof reportStatus.enumValues)[number];
-export type TransportUnitStatus = (typeof transportUnitStatus.enumValues)[number];
+export type RoomPackingStatus = (typeof roomPackingStatus.enumValues)[number];
+export type PackingUnitType = (typeof packingUnitType.enumValues)[number];
 export type PackingUnitStatus = (typeof packingUnitStatus.enumValues)[number];
-export type ItemMovementStatus = (typeof itemMovementStatus.enumValues)[number];

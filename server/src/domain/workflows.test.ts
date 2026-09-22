@@ -4,9 +4,8 @@ import { HttpError } from "../lib/errors";
 import {
   assertPackingUnitTransition,
   assertReportTransition,
+  assertRoomPackingTransition,
   assertRoomTransition,
-  assertTransportUnitTransition,
-  reviewReceivingManifest,
 } from "./workflows";
 
 describe("workflow state machines", () => {
@@ -20,25 +19,17 @@ describe("workflow state machines", () => {
     expect(() => assertReportTransition("draft", "approved")).toThrow(HttpError);
   });
 
-  it("releases a transport only from in-transit", () => {
-    expect(() => assertTransportUnitTransition("in_transit", "released")).not.toThrow();
-    expect(() => assertTransportUnitTransition("loading", "released")).toThrow(HttpError);
+  it("allows a room to pause and resume packing, but not restart once closed", () => {
+    expect(() => assertRoomPackingTransition("not_started", "in_packing")).not.toThrow();
+    expect(() => assertRoomPackingTransition("in_packing", "paused")).not.toThrow();
+    expect(() => assertRoomPackingTransition("paused", "in_packing")).not.toThrow();
+    expect(() => assertRoomPackingTransition("closed", "in_packing")).toThrow(HttpError);
   });
 
-  it("classifies unchecked packing units as missing", () => {
-    expect(reviewReceivingManifest(["a", "b", "c"], ["a", "c"])).toEqual({
-      receivedIds: ["a", "c"],
-      missingIds: ["b"],
-    });
-  });
-
-  it("rejects duplicate or foreign packing units", () => {
-    expect(() => reviewReceivingManifest(["a"], ["a", "a"])).toThrow(HttpError);
-    expect(() => reviewReceivingManifest(["a"], ["b"])).toThrow(HttpError);
-  });
-
-  it("allows a missing packing unit to be recovered", () => {
-    expect(() => assertPackingUnitTransition("missing", "received")).not.toThrow();
-    expect(() => assertPackingUnitTransition("received", "missing")).toThrow(HttpError);
+  it("allows a packing unit to close only after packing has started", () => {
+    expect(() => assertPackingUnitTransition("awaiting_packing", "packing_in_progress")).not.toThrow();
+    expect(() => assertPackingUnitTransition("packing_in_progress", "closed")).not.toThrow();
+    expect(() => assertPackingUnitTransition("awaiting_packing", "closed")).toThrow(HttpError);
+    expect(() => assertPackingUnitTransition("closed", "packing_in_progress")).toThrow(HttpError);
   });
 });

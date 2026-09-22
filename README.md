@@ -1,6 +1,6 @@
 # South Operation — מעבר דרומה
 
-Secure, Hebrew-first equipment mapping and relocation system built with Next.js, Microsoft Entra ID, Neon Postgres, and Drizzle ORM.
+Secure, Hebrew-first equipment mapping and relocation system built with Next.js, Microsoft Entra ID, Supabase Postgres, and Drizzle ORM.
 
 > This public repository must contain synthetic data only. Never commit identities, operational records, secrets, production exports, or infrastructure credentials.
 
@@ -17,7 +17,7 @@ SouthOperation/
 ├── server/                    # Independent Hono HTTP service
 │   ├── src/app.ts            # HTTP routes and security middleware
 │   ├── src/index.ts          # Local server entry point (port 3001)
-│   ├── src/db/                # Drizzle schema and lazy Neon client
+│   ├── src/db/                # Drizzle schema and lazy Postgres client
 │   ├── src/domain/            # Workflow state machines
 │   ├── src/lib/               # Authorization, errors, audit filtering
 │   ├── src/services/          # Transactional domain services
@@ -36,7 +36,7 @@ The workspaces have no package dependency on each other. The browser calls same-
 - Opaque UUIDs and explicit foreign keys replace predictable/prefix-derived identifiers.
 - Strict Zod request schemas reject unknown fields and invalid references.
 - The backend rejects unauthenticated direct access with constant-time bearer-secret comparison and does not enable browser CORS.
-- Mutations write audit and export-outbox events in the same Neon batch.
+- Mutations write audit and export-outbox events in the same Postgres transaction.
 - `audit_events` is append-only at the database layer.
 - Archives are explicit; ordinary application actions do not hard-delete records.
 - Security headers are set by Next.js. CSP is report-only until Entra and production telemetry have been verified.
@@ -53,10 +53,11 @@ The workspaces have no package dependency on each other. The browser calls same-
 
 Do not run migrations or the development server before completing the link and environment checks.
 
-1. Install workspace dependencies:
+1. Install dependencies:
 
    ```bash
-   pnpm install
+   npm install --prefix client
+   npm install --prefix server
    ```
 
 2. Link the existing Vercel project from the repository root:
@@ -65,7 +66,7 @@ Do not run migrations or the development server before completing the link and e
    vercel link
    ```
 
-3. Provision Neon Postgres through the Vercel Marketplace. Use separate Neon branches for development, preview, and production. Never connect a preview deployment to production data.
+3. Create a Supabase project and use its Postgres connection string as `DATABASE_URL`. Use separate Supabase projects for development, preview, and production. Never connect a preview deployment to production data.
 
 4. Register the Entra web application as single-tenant and configure these redirect URIs:
 
@@ -85,11 +86,19 @@ Do not run migrations or the development server before completing the link and e
      <(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' .env.local | cut -d '=' -f 1 | sort -u)
    ```
 
-7. Apply the reviewed migration to the development branch only:
+7. Apply the reviewed migration to the Supabase development project only:
 
    ```bash
-   pnpm db:migrate
+   npm run db:migrate
    ```
+
+   Run it from the repository root with `DATABASE_URL` loaded, or use the
+   Supabase SQL editor with the reviewed migration in `server/drizzle/`.
+
+The Vercel project deploys the Next.js client. The Hono API server must also
+be deployed as a separate service and configured with the same
+`INTERNAL_API_SECRET`, plus the Supabase `DATABASE_URL`. Set the client
+`SERVER_API_URL` to that deployed API URL.
 
 8. Add the first administrator directly through an approved database-administration workflow. Store the Entra object ID in `external_subject`; never use a national identifier as an account key.
 

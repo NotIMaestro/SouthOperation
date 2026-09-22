@@ -1,100 +1,87 @@
-import { z } from "zod";
+import { requireGroupAccess } from "@south-operation/server/authorization";
+import { HttpError } from "@south-operation/server/errors";
+import { findInvitedUserBySubject } from "@south-operation/server/authorization";
+import { listVisibleGroups } from "@south-operation/server/groups";
+import {
+  listPackableItems as listPackableItemsSvc,
+  listPackingUnits as listPackingUnitsSvc,
+  loadRoomForGroup,
+} from "@south-operation/server/packing";
+import { listRooms } from "@south-operation/server/rooms";
+import { listReports } from "@south-operation/server/reports";
 
-const apiEnvSchema = z.object({
-  SERVER_API_URL: z.url(),
-  INTERNAL_API_SECRET: z.string().min(32),
-});
+import { getActor } from "@/lib/actor";
 
-const maxBodyBytes = 1_000_000;
+export type ServerResult<T> = { ok: true; data: T } | { ok: false; message: string };
 
-function apiConfig() {
-  return apiEnvSchema.parse({
-    SERVER_API_URL: process.env.SERVER_API_URL,
-    INTERNAL_API_SECRET: process.env.INTERNAL_API_SECRET,
-  });
-}
-
-async function serverRequest(
-  path: string,
-  init: RequestInit = {},
-  internalUserId?: string,
-) {
-  const config = apiConfig();
-  const headers = new Headers(init.headers);
-  headers.set("Authorization", `Bearer ${config.INTERNAL_API_SECRET}`);
-  headers.set("Accept", "application/json");
-  if (internalUserId) headers.set("X-Internal-User-Id", internalUserId);
-
-  return fetch(new URL(path, config.SERVER_API_URL), {
-    ...init,
-    cache: "no-store",
-    headers,
-    signal: AbortSignal.timeout(10_000),
-  });
-}
-
-export async function provisionEnterpriseUser(input: {
-  subject: string;
-  email: string;
-  displayName: string;
-  role: "admin" | "manager" | "commander" | "operator";
-}) {
-  const response = await serverRequest("/internal/auth/resolve", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
-  });
-
-  if (!response.ok) return undefined;
-  const payload = z.object({ data: z.object({ id: z.uuid() }) }).parse(await response.json());
-  return payload.data;
-}
-
-function proxyError(status: number, code: string, message: string) {
-  return Response.json(
-    { error: { code, message }, requestId: crypto.randomUUID() },
-    { status, headers: { "Cache-Control": "no-store" } },
-  );
-}
-
-export async function proxyServerRequest(
-  request: Request,
-  path: string,
-  internalUserId?: string,
-) {
-  const contentLength = Number(request.headers.get("content-length") ?? "0");
-  if (Number.isFinite(contentLength) && contentLength > maxBodyBytes) {
-    return proxyError(413, "PAYLOAD_TOO_LARGE", "The request body is too large.");
-  }
-
-  const hasBody = request.method !== "GET" && request.method !== "HEAD";
-  const body = hasBody ? await request.arrayBuffer() : undefined;
-  if (body && body.byteLength > maxBodyBytes) {
-    return proxyError(413, "PAYLOAD_TOO_LARGE", "The request body is too large.");
-  }
-
+async function attempt<T>(fn: () => Promise<T>): Promise<ServerResult<T>> {
   try {
-    const headers = new Headers();
-    const contentType = request.headers.get("content-type");
-    const requestId = request.headers.get("x-request-id");
-    if (contentType) headers.set("Content-Type", contentType);
-    if (requestId) headers.set("X-Request-Id", requestId);
-
-    const response = await serverRequest(
-      path,
-      { method: request.method, headers, body },
-      internalUserId,
-    );
-    const responseHeaders = new Headers({ "Cache-Control": "no-store" });
-    for (const name of ["content-type", "x-request-id"]) {
-      const value = response.headers.get(name);
-      if (value) responseHeaders.set(name, value);
+    return { ok: true, data: await fn() };
+  } catch (error) {
+    if (error instanceof HttpError && (error.status === 401 || error.status === 403)) {
+      return { ok: false, message: "אין לכם הרשאה לצפות בנתון זה." };
     }
-    return new Response(response.body, {
-      status: response.status,
-      headers: responseHeaders,
-    });
-  } catch {
-    return proxyError(502, "UPSTREAM_UNAVAILABLE", "The server is temporarily unavailable.");
+    if (error instanceof HttpError && error.status === 404) {
+      return { ok: false, message: "המשאב המבוקש לא נמצא." };
+    }
+    return { ok: false, message: "לא ניתן להתחבר למסד הנתונים. נסו שוב מאוחר יותר." };
   }
+}
+
+export type Group = Awaited<ReturnType<typeof listVisibleGroups>>[number];
+export type Room = Awaited<ReturnType<typeof loadRoomForGroup>>;
+export type RoomListItem = Awaited<ReturnType<typeof listRooms>>[number];
+export type PackingUnit = Awaited<ReturnType<typeof listPackingUnitsSvc>>[number];
+export type PackableItem = Awaited<ReturnType<typeof listPackableItemsSvc>>[number];
+export type MappingReport = Awaited<ReturnType<typeof listReports>>[number];
+
+export function listGroups() {
+  return attempt(async () => listVisibleGroups(await getActor()));
+}
+
+export function getRoom(roomId: string) {
+  return attempt(async () => {
+    const actor = await getActor();
+    const room = await loadRoomForGroup(roomId);
+    await requireGroupAccess(actor, room.groupId);
+    return room;
+  });
+}
+
+export function listRoomsForGroup(groupId: string) {
+  return attempt(async () => {
+    const actor = await getActor();
+    await requireGroupAccess(actor, groupId);
+    return listRooms(groupId);
+  });
+}
+
+export function listPackingUnitsForRoom(roomId: string) {
+  return attempt(async () => {
+    const actor = await getActor();
+    const room = await loadRoomForGroup(roomId);
+    await requireGroupAccess(actor, room.groupId);
+    return listPackingUnitsSvc(room.groupId, roomId);
+  });
+}
+
+export function listPackableItems(roomId: string) {
+  return attempt(async () => {
+    const actor = await getActor();
+    const room = await loadRoomForGroup(roomId);
+    await requireGroupAccess(actor, room.groupId);
+    return listPackableItemsSvc(room.groupId, roomId);
+  });
+}
+
+export function listReportsForGroup(groupId: string) {
+  return attempt(async () => {
+    const actor = await getActor();
+    await requireGroupAccess(actor, groupId);
+    return listReports(groupId);
+  });
+}
+
+export async function resolveInvitedUser(subject: string) {
+  return findInvitedUserBySubject(subject);
 }

@@ -6,7 +6,7 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   {
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=(), browsing-topics=()",
+    value: "camera=(self), microphone=(), geolocation=(), browsing-topics=()",
   },
   {
     key: "Strict-Transport-Security",
@@ -33,6 +33,8 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
+  transpilePackages: ["@south-operation/server"],
+  serverExternalPackages: ["postgres"],
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },

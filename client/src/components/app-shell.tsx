@@ -1,81 +1,82 @@
 import {
-  Boxes,
-  Building2,
-  ChevronUp,
-  ClipboardCheck,
-  FileClock,
-  LayoutDashboard,
-  LibraryBig,
-  LogOut,
-  ShieldCheck,
+  Menu,
   PackageCheck,
+  PackageOpen,
+  QrCode,
+  ShieldCheck,
   Truck,
-  UsersRound,
   Waypoints,
 } from "lucide-react";
 import Link from "next/link";
 
-import { signOut } from "@/auth";
+import { NavigationLink } from "./navigation-link";
 
 const links = [
-  { href: "/dashboard", label: "לוח בקרה", icon: LayoutDashboard },
-  { href: "/groups", label: "קבוצות", icon: Building2 },
-  { href: "/rooms", label: "חדרים", icon: Boxes },
-  { href: "/reports", label: "דוחות מיפוי", icon: ClipboardCheck },
-  { href: "/catalog", label: "קטלוג", icon: LibraryBig },
-  { href: "/memberships", label: "הרשאות", icon: UsersRound },
-  { href: "/audit", label: "יומן ביקורת", icon: FileClock },
-  { href: "/transport", label: "הובלה", icon: Truck },
-  { href: "/receiving", label: "קבלת ציוד", icon: PackageCheck },
+  { href: "/packing", label: "אריזת חבילות", icon: PackageCheck },
+  { href: "/transport", label: "הובלת חבילות", icon: Truck },
+  { href: "/receiving", label: "קבלת חבילות", icon: PackageOpen },
+  { href: "/pickup", label: "איסוף חבילות", icon: PackageCheck },
 ];
+
+const managementLinks = [
+  { href: "/package-status", label: "סטטוס חבילות משוייכות", icon: PackageCheck },
+  { href: "/memberships", label: "הצגת בכירים", icon: Waypoints },
+  { href: "/logistics", label: "הצגת לוגיסטיקה", icon: Waypoints },
+];
+
+function localGreeting() {
+  const hour = Number(
+    new Intl.DateTimeFormat("he-IL", {
+      hour: "2-digit",
+      hourCycle: "h23",
+      timeZone: "Asia/Jerusalem",
+    }).format(new Date()),
+  );
+
+  if (hour < 12) return "בוקר טוב משתמש";
+  if (hour < 18) return "צהריים טובים משתמש";
+  return "ערב טוב משתמש";
+}
+
+function Navigation() {
+  return <>
+    <span className="nav-section-label">תהליך העברה</span>
+    {links.map(({ href, label, icon: Icon }) => (
+      <NavigationLink href={href} key={href}><Icon aria-hidden="true" /><span>{label}</span></NavigationLink>
+    ))}
+    <span className="nav-section-label">ניהול ובקרה</span>
+    {managementLinks.map(({ href, label, icon: Icon }) => (
+      <NavigationLink href={href} key={href}><Icon aria-hidden="true" /><span>{label}</span></NavigationLink>
+    ))}
+    <span className="nav-section-label">פיתוח / הדגמה</span>
+    <NavigationLink href="/demo/qr-generator"><QrCode aria-hidden="true" /><span>מחולל קודי QR</span></NavigationLink>
+  </>;
+}
 
 export function AppShell({
   children,
-  userName,
 }: {
   children: React.ReactNode;
-  userName: string;
 }) {
   return (
     <div className="app-frame">
       <aside className="sidebar">
         <Link className="brand" href="/dashboard">
           <span className="brand-mark"><Waypoints aria-hidden="true" /></span>
-          <span>מעבר דרומה</span>
+          <span className="brand-copy"><strong>מעבר דרומה</strong><small>{localGreeting()}</small></span>
         </Link>
         <nav className="side-nav" aria-label="ניווט במערכת">
-          {links.map(({ href, label, icon: Icon }) => (
-            <Link href={href} key={href}><Icon aria-hidden="true" /><span>{label}</span></Link>
-          ))}
+          <Navigation />
         </nav>
         <div className="sidebar-footer">
           <span className="secure-chip"><ShieldCheck aria-hidden="true" /> חיבור מאובטח</span>
-          <details className="sidebar-user-menu">
-            <summary className="sidebar-user">
-              <span className="avatar">מ</span>
-              <span><strong>{userName}</strong><small>משתמש מאומת</small></span>
-              <ChevronUp className="user-menu-chevron" aria-hidden="true" />
-            </summary>
-            <div className="user-menu-popover">
-              <form
-                action={async () => {
-                  "use server";
-                  await signOut({ redirectTo: "/sign-in" });
-                }}
-              >
-                <button className="sign-out-button" type="submit">
-                  <LogOut aria-hidden="true" />
-                  <span>התנתקות</span>
-                </button>
-              </form>
-            </div>
-          </details>
         </div>
       </aside>
       <div className="workspace">
         <header className="mobile-header">
           <Link aria-label="לוח הבקרה" href="/dashboard"><Waypoints aria-hidden="true" /></Link>
           <span>מעבר דרומה</span>
+          <details className="mobile-navigation"><summary><Menu aria-hidden="true" /><span>תפריט</span></summary><nav className="side-nav" aria-label="ניווט במכשיר נייד"><Navigation /></nav></details>
         </header>
         {children}
       </div>
