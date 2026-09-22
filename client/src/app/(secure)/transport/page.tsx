@@ -30,8 +30,8 @@ type TransportItem = {
   destinationUnit: string;
   destinationBuilding: string;
   destinationRoom: string;
-  unit: string;
-  contents: string;
+  packageCount: number;
+  packageSummary: string;
   vehicleType?: string;
   vehicleNumber?: string;
 };
@@ -53,8 +53,8 @@ const initialTransportItems: TransportItem[] = [
     destinationUnit: "קריית התקשוב",
     destinationBuilding: "בניין 2",
     destinationRoom: "214",
-    unit: "מעוז",
-    contents: "ציוד אישי",
+    packageCount: 2,
+    packageSummary: "תיקים וציוד אישי",
   },
   {
     id: "TR-023",
@@ -72,8 +72,8 @@ const initialTransportItems: TransportItem[] = [
     destinationUnit: "קריית התקשוב",
     destinationBuilding: "בניין 1",
     destinationRoom: "108",
-    unit: "ציוד משרדי",
-    contents: "מסכים, מקלדות וציוד כתיבה",
+    packageCount: 6,
+    packageSummary: "מסכים, מקלדות, עכברים וציוד כתיבה",
     vehicleType: "משאית",
     vehicleNumber: "58-123-45",
   },
@@ -93,8 +93,8 @@ const initialTransportItems: TransportItem[] = [
     destinationUnit: "קריית התקשוב",
     destinationBuilding: "בניין 3",
     destinationRoom: "305",
-    unit: "ציוד מצריפין",
-    contents: "ארגזי ציוד ופריטי מיגון",
+    packageCount: 4,
+    packageSummary: "ארגזי ציוד ופריטי מיגון",
     vehicleType: "טנדר",
     vehicleNumber: "76-456-12",
   },
@@ -112,7 +112,7 @@ export default function TransportPage() {
   const [statusError, setStatusError] = useState("");
 
   const filteredTransportItems = transportItems.filter((item) => {
-    const searchContent = [item.title, item.unit, item.id, item.route, item.contents]
+    const searchContent = [item.title, item.id, item.route, item.sourceUnit, item.destinationUnit, item.packageSummary]
       .join(" ")
       .toLowerCase();
     return searchContent.includes(searchTerm.trim().toLowerCase()) &&
@@ -131,14 +131,14 @@ export default function TransportPage() {
     const destinationUnit = String(formData.get("destinationUnit") ?? "");
     const destinationBuilding = String(formData.get("destinationBuilding") ?? "");
     const destinationRoom = String(formData.get("destinationRoom") ?? "");
-    const unit = String(formData.get("unit") ?? "");
-    const contents = String(formData.get("contents") ?? "");
+    const packageCount = Number(formData.get("packageCount") ?? 0);
+    const packageSummary = String(formData.get("packageSummary") ?? "");
     const date = String(formData.get("createdAt") ?? "");
 
     setTransportItems((items) => [
       {
         id: `TR-${String(items.length + 25).padStart(3, "0")}`,
-        title: unit || "הובלה חדשה",
+        title: "הובלה חדשה",
         route: `${sourceCity} > ${destinationCity}`,
         date: date || "מועד לא נקבע",
         status: "waiting",
@@ -152,8 +152,8 @@ export default function TransportPage() {
         destinationUnit,
         destinationBuilding,
         destinationRoom,
-        unit,
-        contents,
+        packageCount,
+        packageSummary,
       },
       ...items,
     ]);
@@ -262,11 +262,12 @@ export default function TransportPage() {
               <small>{item.id}</small>
             </div>
             <div>
-              <small><MapPin aria-hidden="true" /> {item.route}</small>
-              <small>{item.destinationUnit}, {item.destinationBuilding}, חדר {item.destinationRoom} · יצר: {item.createdBy}</small>
+              <small><MapPin aria-hidden="true" /> יציאה: {item.sourceCity}, {item.sourceUnit}, {item.sourceBuilding}, חדר {item.sourceRoom}</small>
+              <small>יעד: {item.destinationCity}, {item.destinationUnit}, {item.destinationBuilding}, חדר {item.destinationRoom}</small>
             </div>
             <div>
               <small><CalendarDays aria-hidden="true" /> {item.date}</small>
+              <small>{item.packageCount} חבילות · יצר: {item.createdBy}</small>
               <span className={`transport-status ${item.status}`}>{item.statusLabel}</span>
             </div>
             <div className="transport-actions">
@@ -280,7 +281,7 @@ export default function TransportPage() {
           <div className="empty-state transport-no-results">
             <PackageCheck aria-hidden="true" />
             <h2>לא נמצאו הובלות</h2>
-            <p>נסה לחפש לפי שם החבילה, מספר ההובלה או מיקום.</p>
+            <p>נסה לחפש לפי שם ההובלה, תיאור החבילות, מספר ההובלה או מיקום.</p>
           </div>
         )}
       </section>
@@ -305,21 +306,14 @@ export default function TransportPage() {
               <div>
                 <span className="eyebrow"><Truck aria-hidden="true" /> {selectedTransport.id}</span>
                 <h2 id="transport-details-title">פרטי הובלה</h2>
-                <p>{selectedTransport.unit}</p>
+                <p>{selectedTransport.id}</p>
               </div>
               <button aria-label="סגירת פרטי ההובלה" className="icon-button" onClick={() => setSelectedTransport(null)} type="button"><X /></button>
             </div>
             <div className="transport-details-grid">
               <div><small>שם יוצר ההובלה</small><strong>{selectedTransport.createdBy}</strong></div>
-              <div><small>יחידה / שם ההובלה</small><strong>{selectedTransport.unit}</strong></div>
-              <div><small>עיר יציאה</small><strong>{selectedTransport.sourceCity}</strong></div>
-              <div><small>יחידה יוצאת</small><strong>{selectedTransport.sourceUnit}</strong></div>
-              <div><small>בניין יציאה</small><strong>{selectedTransport.sourceBuilding}</strong></div>
-              <div><small>חדר יציאה</small><strong>{selectedTransport.sourceRoom}</strong></div>
-              <div><small>עיר יעד</small><strong>{selectedTransport.destinationCity}</strong></div>
-              <div><small>יחידת יעד</small><strong>{selectedTransport.destinationUnit}</strong></div>
-              <div><small>בניין יעד</small><strong>{selectedTransport.destinationBuilding}</strong></div>
-              <div><small>חדר יעד</small><strong>{selectedTransport.destinationRoom}</strong></div>
+              <div className="transport-detail-wide"><small>מיקום יציאה</small><strong>{selectedTransport.sourceCity}, {selectedTransport.sourceUnit}, {selectedTransport.sourceBuilding}, חדר {selectedTransport.sourceRoom}</strong></div>
+              <div className="transport-detail-wide"><small>מיקום יעד</small><strong>{selectedTransport.destinationCity}, {selectedTransport.destinationUnit}, {selectedTransport.destinationBuilding}, חדר {selectedTransport.destinationRoom}</strong></div>
               <div><small>מועד יצירה / שינוע</small><strong>{selectedTransport.date}</strong></div>
               <div><small>סטטוס</small><span className={`transport-status ${selectedTransport.status}`}>{selectedTransport.statusLabel}</span></div>
               {selectedTransport.status !== "waiting" && (
@@ -328,7 +322,8 @@ export default function TransportPage() {
                   <div className={selectedTransport.status === "arrived" ? "transport-readonly-field" : ""}><small>מספר רכב</small><strong>{selectedTransport.vehicleNumber || "לא צוין"}</strong></div>
                 </>
               )}
-              <div className="transport-detail-wide"><small>מה החבילה מכילה</small><strong>{selectedTransport.contents}</strong></div>
+              <div><small>מספר חבילות</small><strong>{selectedTransport.packageCount}</strong></div>
+              <div className="transport-detail-wide"><small>מה יש בחבילות</small><strong>{selectedTransport.packageSummary}</strong></div>
             </div>
             {selectedTransport.status !== "arrived" && (
               <div className="transport-status-editor">
@@ -384,7 +379,6 @@ export default function TransportPage() {
             </div>
             <form className="transport-form" onSubmit={createTransport}>
               <label>שם יוצר ההובלה<input defaultValue="מעוז" name="createdBy" placeholder="לדוגמה: מעוז" required /></label>
-              <label>יחידה / שם ההובלה<input name="unit" placeholder="לדוגמה: צוות תפעול" required /></label>
               <div className="transport-location-section transport-form-wide">
                 <h3>מיקום יציאה</h3>
                 <div className="transport-location-grid">
@@ -403,7 +397,8 @@ export default function TransportPage() {
                   <label>חדר<input name="destinationRoom" placeholder="לדוגמה: 214" required /></label>
                 </div>
               </div>
-              <label className="transport-form-wide">מה החבילה מכילה<textarea name="contents" placeholder="תיאור הציוד או החבילה" required rows={3} /></label>
+              <label>מספר חבילות<input min="1" name="packageCount" required type="number" /></label>
+              <label className="transport-form-wide">מה יש בחבילות<textarea name="packageSummary" placeholder="תיאור כללי של הציוד בחבילות" required rows={3} /></label>
               <label>מועד יצירה<input name="createdAt" type="datetime-local" required /></label>
               <label>סטטוס התחלתי<select disabled defaultValue="waiting"><option value="waiting">ממתין לאיסוף</option></select></label>
               <div className="transport-form-actions">
