@@ -4,8 +4,6 @@ import {
   Boxes,
   Building2,
   ClipboardCheck,
-  FileClock,
-  Library,
   PackageCheck,
   PackageOpen,
   TimerReset,
@@ -21,13 +19,6 @@ const primaryTiles = [
   { href: "/transport", label: "הובלה", sub: "העמסה על רכב", icon: Truck },
   { href: "/receiving", label: "קבלת הובלות", sub: "פריקת הובלה", icon: PackageOpen },
   { href: "/pickup", label: "איסוף חבילות", sub: "לחדרי היעד", icon: PackageCheck },
-];
-
-const secondaryTiles = [
-  { href: "/rooms", label: "מיפוי חדרים", sub: "מעקב לפי חדר", icon: Boxes },
-  { href: "/groups", label: "קבוצות", sub: "ניהול יחידות", icon: Building2 },
-  { href: "/catalog", label: "קטלוג פריטים", sub: "סוגי ציוד", icon: Library },
-  { href: "/audit", label: "יומן ביקורת", sub: "מי עשה מה", icon: FileClock },
 ];
 
 function percent({ done, total }: { done: number; total: number }) {
@@ -119,15 +110,6 @@ export default async function DashboardPage() {
       <section className="dashboard-mobile-grid" aria-label="פעולות עיקריות">
         <div className="mobile-grid-primary">
           {primaryTiles.map(({ href, label, sub, icon: Icon }) => (
-            <Link className="mobile-tile" href={href} key={href}>
-              <span className="mobile-tile-icon"><Icon aria-hidden="true" /></span>
-              <span><strong>{label}</strong><small>{sub}</small></span>
-            </Link>
-          ))}
-        </div>
-        <span className="dashboard-mobile-section-label">עוד</span>
-        <div className="mobile-grid-secondary">
-          {secondaryTiles.map(({ href, label, sub, icon: Icon }) => (
             <Link className="mobile-tile" href={href} key={href}>
               <span className="mobile-tile-icon"><Icon aria-hidden="true" /></span>
               <span><strong>{label}</strong><small>{sub}</small></span>

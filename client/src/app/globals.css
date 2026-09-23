@@ -109,7 +109,10 @@ svg { width: 1.15rem; height: 1.15rem; stroke-width: 1.8; }
 .sidebar .brand { padding: 0.4rem 0.35rem 1.5rem; }
 .group-switcher { display: grid; gap: 0.3rem; margin: 0 0.35rem 0.9rem; }
 .group-switcher-label { display: flex; align-items: center; gap: 0.4rem; color: rgba(255,255,255,0.55); font-size: 0.7rem; letter-spacing: 0.04em; text-transform: uppercase; }
-.group-switcher select { width: 100%; border: 1px solid rgba(255,255,255,0.18); border-radius: 0.65rem; padding: 0.55rem 0.7rem; color: white; background: rgba(255,255,255,0.07); font: inherit; }
+.group-switcher select { width: 100%; border: 1px solid rgba(255,255,255,0.18); border-radius: 0.65rem; padding: 0.55rem 0.7rem; color: white; background-color: #1c3a32; font: inherit; color-scheme: dark; cursor: pointer; }
+.group-switcher select:hover, .group-switcher select:focus, .group-switcher select:active { color: white; background-color: #24463c; }
+.group-switcher select:disabled { opacity: 0.6; cursor: progress; }
+.group-switcher option { color: white; background-color: #102c25; }
 .group-switcher select:focus-visible { outline: 2px solid var(--lime); outline-offset: 1px; }
 .side-nav { display: grid; gap: 0.25rem; }
 .side-nav a { display: flex; align-items: center; gap: 0.72rem; min-height: 2.8rem; padding: 0.65rem 0.75rem; border-radius: 0.75rem; color: rgba(255,255,255,0.7); transition: background 140ms ease, color 140ms ease; }
@@ -158,9 +161,7 @@ svg { width: 1.15rem; height: 1.15rem; stroke-width: 1.8; }
 .quick-actions a:last-child { border-bottom: 0; }
 
 .dashboard-mobile-grid { display: none; }
-.dashboard-mobile-section-label { display: block; margin: 1.35rem 0 0.6rem; color: var(--muted); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
-.mobile-grid-primary, .mobile-grid-secondary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.85rem; }
-.mobile-grid-secondary { margin-top: 0.6rem; }
+.mobile-grid-primary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.85rem; }
 .mobile-tile {
   display: flex;
   flex-direction: column;
@@ -180,9 +181,6 @@ svg { width: 1.15rem; height: 1.15rem; stroke-width: 1.8; }
 .mobile-tile strong { display: block; font-size: 1.02rem; }
 .mobile-tile small { display: block; margin-top: 0.2rem; color: rgba(255,255,255,0.62); font-size: 0.78rem; }
 .mobile-tile:focus-visible { outline: 3px solid rgba(199, 243, 109, 0.7); outline-offset: 2px; }
-.mobile-grid-secondary .mobile-tile { border-color: var(--line); color: var(--ink); background: rgba(255,255,255,0.84); box-shadow: 0 10px 35px rgba(18,43,34,0.045); }
-.mobile-grid-secondary .mobile-tile-icon { background: rgba(199,243,109,0.35); color: var(--brand); }
-.mobile-grid-secondary .mobile-tile small { color: var(--muted); }
 .empty-state { min-height: 22rem; display: grid; place-items: center; align-content: center; text-align: center; padding: 2rem; }
 .empty-state > span { display: grid; width: 4rem; height: 4rem; place-items: center; border-radius: 1.1rem; color: var(--brand); background: rgba(199,243,109,0.3); }
 .empty-state > span svg { width: 1.8rem; height: 1.8rem; }
@@ -391,7 +389,8 @@ body:has(.pickup-dialog[open]) { overflow: hidden; }
 /* Package prototype: shares the application's green, paper and panel palette. */
 .side-nav a[aria-current="page"] { background: rgba(199,243,109,.15); color: var(--lime); }
 .nav-section-label { padding: 1rem .75rem .4rem; color: #b9c8c2; font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; }
-.sidebar { overflow-y: auto; }
+.sidebar { overflow-y: auto; scrollbar-width: none; }
+.sidebar::-webkit-scrollbar { display: none; }
 .sidebar-footer { padding-top: 1rem; }
 .mobile-header { position: relative; z-index: 5; }
 .mobile-navigation { margin-inline-start: auto; }

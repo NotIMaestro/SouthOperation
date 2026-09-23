@@ -197,13 +197,12 @@ export function listAuditLog() {
   });
 }
 
-export function listGroupOverviews() {
+export function getGroupOverview(groupId: string) {
   return attempt(async () => {
     const actor = await getActor();
-    const groups = await listVisibleGroups(actor);
-    const overviews = await getGroupOverviews(groups.map((group) => group.id));
-    const overviewById = new Map(overviews.map((overview) => [overview.groupId, overview]));
-    return groups.map((group) => ({ group, overview: overviewById.get(group.id)! }));
+    await requireGroupAccess(actor, groupId);
+    const [overview] = await getGroupOverviews([groupId]);
+    return overview;
   });
 }
 

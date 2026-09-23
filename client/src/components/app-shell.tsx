@@ -1,12 +1,10 @@
 import {
-  Boxes,
   Menu,
   LogOut,
   PackageCheck,
   ScanLine,
   ShieldCheck,
   Truck,
-  UsersRound,
   Waypoints,
 } from "lucide-react";
 import Link from "next/link";
@@ -27,8 +25,6 @@ const links = [
 
 const managementLinks = [
   { href: "/package-status", label: "סטטוס חבילות משוייכות", icon: PackageCheck },
-  { href: "/memberships", label: "הצגת בכירים", icon: Waypoints },
-  { href: "/users", label: "ניהול משתמשים", icon: UsersRound },
   { href: "/logistics", label: "הצגת לוגיסטיקה", icon: Waypoints },
 ];
 
