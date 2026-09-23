@@ -38,15 +38,12 @@ async function provisionEntraUser(
   const email = profile.email ?? profile.preferred_username ?? fallbackUser.email;
   if (!subject || !email) return undefined;
 
-  const bootstrapAdminEmail = process.env.AUTH_BOOTSTRAP_ADMIN_EMAIL?.trim().toLowerCase();
-  const isBootstrapAdmin = Boolean(bootstrapAdminEmail && email.toLowerCase() === bootstrapAdminEmail);
-
   return provisionEnterpriseUser({
     subject,
     email,
     displayName: profile.name?.trim() || fallbackUser.name?.trim() || email,
-    initialRole: isBootstrapAdmin ? "admin" : "pending",
-    bootstrapAdmin: isBootstrapAdmin,
+    // Every Microsoft account is a system admin, re-applied on each sign-in.
+    role: "admin",
   });
 }
 

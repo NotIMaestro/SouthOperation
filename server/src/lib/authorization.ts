@@ -24,8 +24,7 @@ export async function provisionEnterpriseUser(input: {
   subject: string;
   email: string;
   displayName: string;
-  initialRole: UserRole;
-  bootstrapAdmin?: boolean;
+  role: UserRole;
 }) {
   const db = getDb();
   const [existingUser] = await db
@@ -46,7 +45,7 @@ export async function provisionEnterpriseUser(input: {
           externalSubject: input.subject,
           email: input.email,
           displayName: input.displayName,
-          ...(input.bootstrapAdmin ? { role: "admin" as const } : {}),
+          role: input.role,
           updatedAt: new Date(),
         })
         .where(eq(users.id, existingUser.id))
@@ -57,7 +56,7 @@ export async function provisionEnterpriseUser(input: {
           externalSubject: input.subject,
           email: input.email,
           displayName: input.displayName,
-          role: input.initialRole,
+          role: input.role,
         })
         .returning({ id: users.id, isActive: users.isActive });
 
