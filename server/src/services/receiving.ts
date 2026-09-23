@@ -6,12 +6,21 @@ import {
   mappingReports,
   packingUnitItems,
   packingUnits,
+  receiptIssues,
   rooms,
   subcategories,
   transports,
+  type ReceiptIssueType,
 } from "../db/schema";
 import type { Actor } from "../lib/authorization";
 import { HttpError } from "../lib/errors";
+
+export type ReceiptIssueInput = {
+  packingUnitItemId: string;
+  issueType: ReceiptIssueType;
+  quantity: number;
+  note?: string;
+};
 
 /** Closed packing units with their contents, as reviewed at receiving and pickup. */
 async function listUnitsWithItems(where: SQL | undefined) {
@@ -51,11 +60,28 @@ async function listUnitsWithItems(where: SQL | undefined) {
     .where(inArray(packingUnitItems.packingUnitId, units.map((unit) => unit.id)))
     .orderBy(asc(subcategories.name));
 
+  const issues = items.length === 0 ? [] : await db
+    .select({
+      packingUnitItemId: receiptIssues.packingUnitItemId,
+      issueType: receiptIssues.issueType,
+      quantity: receiptIssues.quantity,
+      note: receiptIssues.note,
+    })
+    .from(receiptIssues)
+    .where(inArray(receiptIssues.packingUnitItemId, items.map((item) => item.id)));
+
   return units.map((unit) => ({
     ...unit,
     items: items
       .filter((item) => item.packingUnitId === unit.id)
-      .map(({ id, name, quantity }) => ({ id, name, quantity })),
+      .map(({ id, name, quantity }) => ({
+        id,
+        name,
+        quantity,
+        issues: issues
+          .filter((issue) => issue.packingUnitItemId === id)
+          .map(({ issueType, quantity: issueQuantity, note }) => ({ issueType, quantity: issueQuantity, note })),
+      })),
   }));
 }
 
@@ -98,11 +124,47 @@ export async function listReceivingForGroup(groupId: string) {
   };
 }
 
-/** Confirms receipt of every requested transport or none of them. */
-export async function confirmTransportReceipt(actor: Actor, groupId: string, transportIds: string[], requestId: string) {
+/** Confirms receipt of every requested transport or none of them, recording damaged or missing items. */
+export async function confirmTransportReceipt(
+  actor: Actor,
+  groupId: string,
+  transportIds: string[],
+  requestId: string,
+  issues: ReceiptIssueInput[] = [],
+) {
   const occurredAt = new Date();
+  const db = getDb();
 
-  await getDb().transaction(async (transaction) => {
+  // Every reported item must belong to one of the confirmed transports, within its packed quantity.
+  const reportedItems = issues.length === 0 ? [] : await db
+    .select({ id: packingUnitItems.id, quantity: packingUnitItems.quantity, transportId: packingUnits.transportId })
+    .from(packingUnitItems)
+    .innerJoin(packingUnits, eq(packingUnitItems.packingUnitId, packingUnits.id))
+    .where(
+      and(
+        inArray(packingUnitItems.id, [...new Set(issues.map((issue) => issue.packingUnitItemId))]),
+        inArray(packingUnits.transportId, transportIds),
+        isNull(packingUnits.archivedAt),
+      ),
+    );
+  const issueRows = issues.map((issue) => {
+    const item = reportedItems.find((entry) => entry.id === issue.packingUnitItemId);
+    if (!item?.transportId) {
+      throw new HttpError(422, "RECEIPT_ISSUE_INVALID", "אחד הפריטים שדווחו אינו שייך להובלות שנבחרו.");
+    }
+    return { ...issue, transportId: item.transportId, packedQuantity: item.quantity };
+  });
+  for (const row of issueRows) {
+    const reported = issueRows
+      .filter((other) => other.packingUnitItemId === row.packingUnitItemId)
+      .reduce((total, other) => total + other.quantity, 0);
+    if (reported > row.packedQuantity) {
+      throw new HttpError(422, "RECEIPT_ISSUE_INVALID", "כמות הפריטים הפגומים והחסרים גדולה מהכמות שנארזה.");
+    }
+  }
+
+
+  await db.transaction(async (transaction) => {
     const updated = await transaction
       .update(transports)
       .set({ receivedAt: occurredAt, receivedByUserId: actor.id, updatedAt: occurredAt })
@@ -129,10 +191,29 @@ export async function confirmTransportReceipt(actor: Actor, groupId: string, tra
         entityId: transport.id,
         groupId,
         requestId,
-        metadata: { transportNumber: transport.transportNumber },
+        metadata: {
+          transportNumber: transport.transportNumber,
+          issues: issueRows
+            .filter((issue) => issue.transportId === transport.id)
+            .map(({ packingUnitItemId, issueType, quantity }) => ({ packingUnitItemId, issueType, quantity })),
+        },
         occurredAt,
       })),
     );
+
+    if (issueRows.length > 0) {
+      await transaction.insert(receiptIssues).values(
+        issueRows.map((issue) => ({
+          transportId: issue.transportId,
+          packingUnitItemId: issue.packingUnitItemId,
+          issueType: issue.issueType,
+          quantity: issue.quantity,
+          note: issue.note || null,
+          reportedByUserId: actor.id,
+          createdAt: occurredAt,
+        })),
+      );
+    }
   });
 
   return listReceivingForGroup(groupId);

@@ -6,6 +6,8 @@ import type { Serialized } from "@/lib/api-client";
 export type ReceivingSnapshot = Serialized<Awaited<ReturnType<typeof listReceivingForGroup>>>;
 export type Delivery = ReceivingSnapshot["pending"][number];
 export type ArrivedUnit = Delivery["units"][number];
+export type ArrivedItem = ArrivedUnit["items"][number];
+export type ReceiptIssue = { packingUnitItemId: string; issueType: "damaged" | "missing"; quantity: number; note?: string };
 export type FilteredReceiving = ReceivingSnapshot & { pendingTotal: number };
 
 export const filterSchema = z.object({
@@ -29,4 +31,10 @@ export function transportErrorMessage(error: unknown) {
 const israelDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jerusalem", year: "numeric", month: "2-digit", day: "2-digit" });
 /** Arrival day in Israel as YYYY-MM-DD, matching the date filter's value. */
 export const deliveryDate = (delivery: Delivery) => (delivery.arrivedAt ? israelDate.format(new Date(delivery.arrivedAt)) : "");
+/** Damaged and missing item totals reported for a delivery at receipt. */
+export function deliveryIssueTotals(delivery: Delivery) {
+  const issues = delivery.units.flatMap((unit) => unit.items.flatMap((item) => item.issues));
+  const total = (type: ReceiptIssue["issueType"]) => issues.filter((issue) => issue.issueType === type).reduce((sum, issue) => sum + issue.quantity, 0);
+  return { damaged: total("damaged"), missing: total("missing") };
+}
 export function displayDeliveryDate(value: string) { return value ? value.split("-").reverse().join(".") : "—"; }

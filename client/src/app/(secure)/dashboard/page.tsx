@@ -6,8 +6,10 @@ import {
   ClipboardCheck,
   PackageCheck,
   PackageOpen,
+  ScanLine,
   TimerReset,
   Truck,
+  Waypoints,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -19,6 +21,12 @@ const primaryTiles = [
   { href: "/transport", label: "הובלה", sub: "העמסה על רכב", icon: Truck },
   { href: "/receiving", label: "קבלת הובלות", sub: "פריקת הובלה", icon: PackageOpen },
   { href: "/pickup", label: "איסוף חבילות", sub: "לחדרי היעד", icon: PackageCheck },
+];
+
+const managementTiles = [
+  { href: "/package-status", label: "סטטוס חבילות", sub: "חבילות משוייכות", icon: PackageCheck },
+  { href: "/logistics", label: "לוגיסטיקה", sub: "תמונת מצב", icon: Waypoints },
+  { href: "/scan-package", label: "סריקת יחידה", sub: "סריקת יחידת אריזה", icon: ScanLine },
 ];
 
 function percent({ done, total }: { done: number; total: number }) {
@@ -108,8 +116,18 @@ export default async function DashboardPage() {
       </div>
 
       <section className="dashboard-mobile-grid" aria-label="פעולות עיקריות">
+        <span className="mobile-grid-label">תהליך העברה</span>
         <div className="mobile-grid-primary">
           {primaryTiles.map(({ href, label, sub, icon: Icon }) => (
+            <Link className="mobile-tile" href={href} key={href}>
+              <span className="mobile-tile-icon"><Icon aria-hidden="true" /></span>
+              <span><strong>{label}</strong><small>{sub}</small></span>
+            </Link>
+          ))}
+        </div>
+        <span className="mobile-grid-label">ניהול ובקרה</span>
+        <div className="mobile-grid-primary">
+          {managementTiles.map(({ href, label, sub, icon: Icon }) => (
             <Link className="mobile-tile" href={href} key={href}>
               <span className="mobile-tile-icon"><Icon aria-hidden="true" /></span>
               <span><strong>{label}</strong><small>{sub}</small></span>

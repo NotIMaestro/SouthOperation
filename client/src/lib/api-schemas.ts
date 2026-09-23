@@ -114,7 +114,28 @@ const uniqueIds = (max: number) =>
     .max(max)
     .refine((ids) => new Set(ids).size === ids.length, "Duplicate identifiers.");
 
-export const confirmReceiptSchema = z.object({ transportIds: uniqueIds(200) }).strict();
+export const receiptIssueSchema = z
+  .object({
+    packingUnitItemId: z.uuid(),
+    issueType: z.enum(["damaged", "missing"]),
+    quantity: z.number().int().positive().max(1_000_000),
+    note: z.string().trim().max(500).optional(),
+  })
+  .strict();
+
+export const confirmReceiptSchema = z
+  .object({
+    transportIds: uniqueIds(200),
+    issues: z
+      .array(receiptIssueSchema)
+      .max(2000)
+      .refine(
+        (issues) => new Set(issues.map((issue) => `${issue.packingUnitItemId}:${issue.issueType}`)).size === issues.length,
+        "Each item can be reported once per issue type.",
+      )
+      .default([]),
+  })
+  .strict();
 
 export const confirmPickupSchema = z.object({ packingUnitIds: uniqueIds(1000) }).strict();
 

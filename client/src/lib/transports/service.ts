@@ -2,7 +2,7 @@ import { callApi, type ApiCallResult } from "@/lib/api-client";
 
 import {
   TransportServiceError, deliveryDate, filterSchema,
-  type DeliveryFilters, type FilteredReceiving, type ReceivingSnapshot,
+  type DeliveryFilters, type FilteredReceiving, type ReceiptIssue, type ReceivingSnapshot,
 } from "./types";
 
 async function unwrap(result: Promise<ApiCallResult<ReceivingSnapshot>>) {
@@ -28,7 +28,7 @@ export const receivingService = {
   async search(groupId: string, filters: DeliveryFilters) {
     return filterDeliveries(await unwrap(callApi<ReceivingSnapshot>(`/api/v1/groups/${groupId}/receiving`, { method: "GET" })), filters);
   },
-  async confirm(groupId: string, transportIds: string[], filters: DeliveryFilters) {
-    return filterDeliveries(await unwrap(callApi<ReceivingSnapshot>(`/api/v1/groups/${groupId}/receiving`, { body: { transportIds } })), filters);
+  async confirm(groupId: string, transportIds: string[], filters: DeliveryFilters, issues: ReceiptIssue[] = []) {
+    return filterDeliveries(await unwrap(callApi<ReceivingSnapshot>(`/api/v1/groups/${groupId}/receiving`, { body: { transportIds, issues } })), filters);
   },
 };

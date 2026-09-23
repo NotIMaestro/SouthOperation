@@ -1,16 +1,28 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CheckCircle2, Truck } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Truck } from "lucide-react";
 import { PickupDialog } from "@/components/pickup/dialog";
 import { SelectionRow } from "@/components/pickup/selection-row";
 import { receivingService } from "@/lib/transports/service";
 import {
-  TransportServiceError, deliveryDate, displayDeliveryDate,
-  emptyDeliveryFilters, filterSchema, transportErrorMessage, type Delivery, type DeliveryFilters, type FilteredReceiving,
+  TransportServiceError, deliveryDate, deliveryIssueTotals, displayDeliveryDate,
+  emptyDeliveryFilters, filterSchema, transportErrorMessage, type Delivery, type DeliveryFilters, type FilteredReceiving, type ReceiptIssue,
 } from "@/lib/transports/types";
 import { DeliveryConfirmation, deliveryTitle } from "./delivery-confirmation";
 
 const confirmationDate = (value: string) => new Intl.DateTimeFormat("he-IL", { dateStyle: "short", timeStyle: "short", timeZone: "Asia/Jerusalem" }).format(new Date(value));
+const issueLabels = { damaged: "פגום", missing: "חסר" } as const;
+function IssueList({ delivery }: { delivery: Delivery }) {
+  const rows = delivery.units.flatMap((unit) => unit.items.flatMap((item) => item.issues.map((issue) => ({ unit, item, issue }))));
+  if (!rows.length) return null;
+  return <details className="receipt-issue-list"><summary>פריטים פגומים וחסרים ({rows.length})</summary>
+    <ul>{rows.map(({ unit, item, issue }) => <li key={`${item.id}-${issue.issueType}`}>
+      <span>{item.name} · יחידה <bdi>{unit.unitNumber}</bdi></span>
+      <strong>{issueLabels[issue.issueType]}: {issue.quantity} מתוך {item.quantity}</strong>
+      {issue.note && <small>{issue.note}</small>}
+    </li>)}</ul>
+  </details>;
+}
 export function ReceivingPage({ groupId }: { groupId: string }) {
   const [state, setState] = useState<FilteredReceiving>({ pending: [], confirmed: [], pendingTotal: 0 });
   const [draft, setDraft] = useState(emptyDeliveryFilters);
@@ -64,15 +76,15 @@ export function ReceivingPage({ groupId }: { groupId: string }) {
     } catch (cause) { if (version === detailVersion.current) setModalError(transportErrorMessage(cause)); }
     finally { if (version === detailVersion.current) setDetailLoading(false); }
   }
-  async function confirm() {
+  async function confirm(issues: ReceiptIssue[]) {
     if (mutation.current || !details?.length) return;
     mutation.current = true; const version = ++detailVersion.current; ++listVersion.current;
     setSaving(true); setModalError("");
     try {
-      const result = await receivingService.confirm(groupId, details.map((entry) => entry.id), filters);
+      const result = await receivingService.confirm(groupId, details.map((entry) => entry.id), filters, issues);
       if (version !== detailVersion.current) return;
       setState(result); setSelected([]); setReviewIds([]); setDetails(null);
-      setNotice(details.length === 1 ? "ההובלה אושרה בהצלחה." : "ההובלות אושרו בהצלחה.");
+      setNotice((details.length === 1 ? "ההובלה אושרה בהצלחה." : "ההובלות אושרו בהצלחה.") + (issues.length ? " הפריטים הפגומים והחסרים נרשמו." : ""));
     } catch (cause) { if (version === detailVersion.current) setModalError(transportErrorMessage(cause)); }
     finally { if (version === detailVersion.current) { mutation.current = false; setSaving(false); } }
   }
@@ -105,8 +117,14 @@ export function ReceivingPage({ groupId }: { groupId: string }) {
       {!loaded && loading ? <p role="status">טוענים הובלות מאושרות…</p> : loaded && <>
         {!state.confirmed.length && <p className="pickup-empty">עדיין לא אושרו הובלות.</p>}
         <div className="pickup-list">{state.confirmed.map((entry) => <article key={entry.id} className="pickup-confirmed-row" aria-label={`הובלה מאושרת ${entry.transportNumber}`}>
-          <div><strong>{deliveryTitle(entry)}</strong><small>מספר זיהוי הובלה: <bdi>{entry.transportNumber}</bdi></small><small>תאריך מסירה: <bdi>{displayDeliveryDate(deliveryDate(entry))}</bdi> · {entry.packageCount} חבילות</small></div>
-          <div><span className="package-badge"><CheckCircle2 size={14} aria-hidden="true" /> התקבלה ואושרה</span>
+          <div><strong>{deliveryTitle(entry)}</strong><small>מספר זיהוי הובלה: <bdi>{entry.transportNumber}</bdi></small><small>תאריך מסירה: <bdi>{displayDeliveryDate(deliveryDate(entry))}</bdi> · {entry.packageCount} חבילות</small>
+            <IssueList delivery={entry} /></div>
+          <div>{(() => {
+            const { damaged, missing } = deliveryIssueTotals(entry);
+            return damaged || missing
+              ? <span className="package-badge receipt-issue-badge"><AlertTriangle size={14} aria-hidden="true" /> התקבלה עם {[damaged && `${damaged} פגומים`, missing && `${missing} חסרים`].filter(Boolean).join(" · ")}</span>
+              : <span className="package-badge"><CheckCircle2 size={14} aria-hidden="true" /> התקבלה ואושרה</span>;
+          })()}
             {entry.receivedAt && <time dateTime={entry.receivedAt}>אושרה ב־{confirmationDate(entry.receivedAt)}</time>}</div>
         </article>)}</div>
       </>}
@@ -115,7 +133,7 @@ export function ReceivingPage({ groupId }: { groupId: string }) {
       {modalError && <p className="package-notice error" role="alert">{modalError}</p>}
       {detailLoading && <p role="status">טוענים את פרטי ההובלות והחבילות…</p>}
       {!detailLoading && !details && <button className="button secondary" onClick={() => void review(reviewIds)}>ניסיון נוסף לטעינת הפרטים</button>}
-      {details && <DeliveryConfirmation deliveries={details} saving={saving} onConfirm={() => void confirm()} />}
+      {details && <DeliveryConfirmation deliveries={details} saving={saving} onConfirm={(issues) => void confirm(issues)} />}
     </PickupDialog>}
   </div>;
 }

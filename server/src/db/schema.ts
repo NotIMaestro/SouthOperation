@@ -71,6 +71,11 @@ export const packingUnitStatus = pgEnum("packing_unit_status", [
   "closed",
 ]);
 
+export const receiptIssueType = pgEnum("receipt_issue_type", [
+  "damaged",
+  "missing",
+]);
+
 export const transportStatus = pgEnum("transport_status", [
   "waiting",
   "transit",
@@ -459,6 +464,34 @@ export const packingUnitItems = pgTable(
   ],
 );
 
+/** Items reported damaged or missing when a transport's receipt was confirmed. */
+export const receiptIssues = pgTable(
+  "receipt_issues",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    transportId: uuid("transport_id")
+      .notNull()
+      .references(() => transports.id, { onDelete: "restrict" }),
+    packingUnitItemId: uuid("packing_unit_item_id")
+      .notNull()
+      .references(() => packingUnitItems.id, { onDelete: "restrict" }),
+    issueType: receiptIssueType("issue_type").notNull(),
+    quantity: integer("quantity").notNull(),
+    note: text("note"),
+    reportedByUserId: uuid("reported_by_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("receipt_issues_item_type_uidx").on(table.packingUnitItemId, table.issueType),
+    index("receipt_issues_transport_idx").on(table.transportId),
+    check("receipt_issues_quantity_check", sql`${table.quantity} > 0`),
+  ],
+);
+
 export const auditEvents = pgTable(
   "audit_events",
   {
@@ -524,3 +557,4 @@ export type RoomPackingStatus = (typeof roomPackingStatus.enumValues)[number];
 export type PackingUnitType = (typeof packingUnitType.enumValues)[number];
 export type PackingUnitStatus = (typeof packingUnitStatus.enumValues)[number];
 export type TransportStatus = (typeof transportStatus.enumValues)[number];
+export type ReceiptIssueType = (typeof receiptIssueType.enumValues)[number];

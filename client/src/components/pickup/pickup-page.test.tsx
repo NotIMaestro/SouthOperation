@@ -20,7 +20,7 @@ function unit(id: string, unitNumber: string, items: [string, number][], collect
   return {
     id, unitNumber, unitType: "pallet", roomName: "חדר 12", destinationBuilding: "בניין 2", destinationFloor: "3", destinationRoom: "214",
     transportId: "t1", transportNumber: "TR-025", receivedAt: "2026-09-22T09:00:00Z", collectedAt,
-    items: items.map(([name, quantity], index) => ({ id: `${id}-${index}`, name, quantity })),
+    items: items.map(([name, quantity], index) => ({ id: `${id}-${index}`, name, quantity, issues: [] })),
   };
 }
 

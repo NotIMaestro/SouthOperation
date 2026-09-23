@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ApiCallResult } from "@/lib/api-client";
-import type { ArrivedUnit, Delivery, ReceivingSnapshot } from "@/lib/transports/types";
+import type { ArrivedUnit, Delivery, ReceiptIssue, ReceivingSnapshot } from "@/lib/transports/types";
 
 import { ReceivingPage } from "./receiving-page";
 
@@ -15,7 +15,7 @@ function unit(id: string, unitNumber: string, transportId: string, items: [strin
   return {
     id, unitNumber, unitType: "professional_carton", roomName: "חדר 12", destinationBuilding: "בניין 2", destinationFloor: null,
     destinationRoom: "214", transportId, transportNumber: transportId.toUpperCase(), receivedAt: null, collectedAt: null,
-    items: items.map(([name, quantity], index) => ({ id: `${id}-${index}`, name, quantity })),
+    items: items.map(([name, quantity], index) => ({ id: `${id}-${index}`, name, quantity, issues: [] })),
   };
 }
 function delivery(id: string, arrivedAt: string, units: ArrivedUnit[], receivedAt: string | null = null): Delivery {
@@ -38,13 +38,17 @@ function seed() {
   };
 }
 /** In-memory stand-in for GET/POST /api/v1/groups/:groupId/receiving. */
-async function fakeApi(url: string, { method = "POST", body }: { method?: string; body?: { transportIds: string[] } } = {}): Promise<ApiCallResult> {
+async function fakeApi(url: string, { method = "POST", body }: { method?: string; body?: { transportIds: string[]; issues?: ReceiptIssue[] } } = {}): Promise<ApiCallResult> {
   expect(url).toBe(`/api/v1/groups/${GROUP}/receiving`);
   if (method === "GET") return { ok: true, data: structuredClone(server) };
   const ids = body!.transportIds;
   if (!ids.every((id) => server.pending.some((entry) => entry.id === id))) return { ok: false, message: "אחת ההובלות כבר אושרה או אינה זמינה לאישור. רעננו את הרשימה." };
   const now = new Date().toISOString();
-  server.confirmed.unshift(...server.pending.filter((entry) => ids.includes(entry.id)).map((entry) => ({ ...entry, receivedAt: now })));
+  const issues = body!.issues ?? [];
+  const withIssues = (entry: Delivery): Delivery => ({ ...entry, receivedAt: now, units: entry.units.map((u) => ({ ...u, items: u.items.map((item) => ({
+    ...item, issues: issues.filter((issue) => issue.packingUnitItemId === item.id).map(({ issueType, quantity, note }) => ({ issueType, quantity, note: note ?? null })),
+  })) })) });
+  server.confirmed.unshift(...server.pending.filter((entry) => ids.includes(entry.id)).map(withIssues));
   server.pending = server.pending.filter((entry) => !ids.includes(entry.id));
   return { ok: true, data: structuredClone(server) };
 }
@@ -111,7 +115,36 @@ describe("delivery receiving", () => {
     expect(screen.getAllByRole("checkbox")).toHaveLength(1);
     expect(screen.getAllByRole("article")).toHaveLength(3);
     expect(screen.queryByRole("dialog")).toBeNull();
-    expect(mocks.callApi).toHaveBeenCalledWith(`/api/v1/groups/${GROUP}/receiving`, { body: { transportIds: ["tr-025", "tr-026"] } });
+    expect(mocks.callApi).toHaveBeenCalledWith(`/api/v1/groups/${GROUP}/receiving`, { body: { transportIds: ["tr-025", "tr-026"], issues: [] } });
+  });
+
+  it("reports damaged and missing items with the confirmation", async () => {
+    await ready(); const button = await review("TR-025");
+    fireEvent.click(screen.getByRole("button", { name: "דיווח נזק או חוסר: מסך" }));
+    fireEvent.change(screen.getByLabelText("כמות פגומה"), { target: { value: "1" } });
+    fireEvent.change(screen.getByLabelText("כמות חסרה"), { target: { value: "1" } });
+    fireEvent.change(screen.getByLabelText("הערה (לא חובה)"), { target: { value: "מסך סדוק" } });
+    expect(screen.getByText(/ידווחו 1 פריטים פגומים ו־1 פריטים חסרים/)).toBeTruthy();
+    fireEvent.click(button);
+    await screen.findByText("ההובלה אושרה בהצלחה. הפריטים הפגומים והחסרים נרשמו.");
+    expect(mocks.callApi).toHaveBeenCalledWith(`/api/v1/groups/${GROUP}/receiving`, { body: { transportIds: ["tr-025"], issues: [
+      { packingUnitItemId: "u1-0", issueType: "damaged", quantity: 1, note: "מסך סדוק" },
+      { packingUnitItemId: "u1-0", issueType: "missing", quantity: 1, note: "מסך סדוק" },
+    ] } });
+    const row = screen.getByRole("article", { name: "הובלה מאושרת TR-025" });
+    expect(row.textContent).toContain("התקבלה עם 1 פגומים · 1 חסרים");
+    expect(row.textContent).toContain("פגום: 1 מתוך 2");
+  });
+
+  it("blocks confirmation when reported quantities exceed the packed quantity", async () => {
+    await ready(); const button = await review("TR-025");
+    fireEvent.click(screen.getByRole("button", { name: "דיווח נזק או חוסר: מסך" }));
+    fireEvent.change(screen.getByLabelText("כמות פגומה"), { target: { value: "2" } });
+    fireEvent.change(screen.getByLabelText("כמות חסרה"), { target: { value: "1" } });
+    expect(screen.getByRole("alert").textContent).toContain("לא יכול לעלות על 2");
+    expect(button).toHaveProperty("disabled", true);
+    fireEvent.click(screen.getByRole("button", { name: "ביטול דיווח: מסך" }));
+    expect(button).toHaveProperty("disabled", false);
   });
 
   it("sends one confirmation despite repeated clicks and blocks Escape while saving", async () => {

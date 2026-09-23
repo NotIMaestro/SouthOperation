@@ -19,6 +19,6 @@ export const POST = apiRoute<RouteContext>(async (request, context, requestId) =
   const groupId = uuidSchema.parse((await context.params).groupId);
   const actor = await getActor();
   await requireGroupAccess(actor, groupId);
-  const { transportIds } = confirmReceiptSchema.parse(await parseJson(request));
-  return { data: await confirmTransportReceipt(actor, groupId, transportIds, requestId) };
+  const { transportIds, issues } = confirmReceiptSchema.parse(await parseJson(request));
+  return { data: await confirmTransportReceipt(actor, groupId, transportIds, requestId, issues) };
 });

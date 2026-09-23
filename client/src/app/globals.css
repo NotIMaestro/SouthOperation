@@ -161,6 +161,8 @@ svg { width: 1.15rem; height: 1.15rem; stroke-width: 1.8; }
 .quick-actions a:last-child { border-bottom: 0; }
 
 .dashboard-mobile-grid { display: none; }
+.mobile-grid-label { display: block; margin: 1.1rem 0 0.6rem; color: var(--muted); font-size: 0.78rem; font-weight: 700; }
+.mobile-grid-label:first-child { margin-top: 0; }
 .mobile-grid-primary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.85rem; }
 .mobile-tile {
   display: flex;
@@ -364,6 +366,21 @@ body:has(.pickup-dialog[open]) { overflow: hidden; }
 .pickup-dialog-heading h2 { margin: .45rem 0; font-size: 1.3rem; }
 .pickup-dialog-heading .button { flex-shrink: 0; }
 .pickup-review { display: grid; gap: 1rem; }
+.receipt-item { display: block !important; }
+.receipt-item-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; }
+.receipt-item-row > span { flex: 1; min-width: 0; }
+.receipt-issue-toggle { min-height: 36px; padding: .35rem .75rem; font-size: .8rem; }
+.receipt-issue-editor { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 .75rem; margin-top: .75rem; padding: .75rem; border-radius: .65rem; background: rgba(229, 168, 59, 0.1); }
+.receipt-issue-editor .receipt-issue-note, .receipt-issue-editor .inline-error { grid-column: 1 / -1; }
+.receipt-issue-editor .package-field { margin-bottom: .6rem; }
+.receipt-issue-summary { display: flex; align-items: center; gap: .5rem; border-inline-start-color: var(--amber); }
+.receipt-issue-badge { color: #8a5a0b; background: rgba(229, 168, 59, 0.18); }
+.receipt-issue-list { margin-top: .5rem; font-size: .8rem; }
+.receipt-issue-list summary { cursor: pointer; color: #8a5a0b; font-weight: 600; }
+.receipt-issue-list ul { margin: .4rem 0 0; padding-inline-start: 1rem; }
+.receipt-issue-list li { margin-bottom: .35rem; }
+.receipt-issue-list li > * { display: block; }
+.receipt-issue-list small { color: var(--muted); }
 .pickup-product-group { border: 1px solid var(--line); background: white; border-radius: .75rem; padding: 1rem; overflow-wrap: anywhere; }
 .pickup-product-group h3 { margin: 0; font-size: 1.1rem; }
 .pickup-product-group p { margin: .5rem 0; }
