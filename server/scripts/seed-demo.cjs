@@ -110,7 +110,8 @@ const dest = (building, floor, room) => ({ building, floor, room });
 /*
  * Rooms. `status` is the mapping state; `packing` only matters once mapped.
  * items:  [catalogKey, quantity, serial?]           (a serial forces quantity 1)
- * units:  { type, items: [[itemIndex, qty]], close?: dest, transport? }  — closed when `close` is set
+ * units:  { type, items: [[itemIndex, qty]], close?: dest, transport?, collected?, collector? }  — closed when `close` is set;
+ *         `collected` (days ago) marks a unit picked up by user `collector` after its transport was received
  * Days are "days ago": started → completed → units opened/closed.
  */
 const rooms = [
@@ -121,7 +122,7 @@ const rooms = [
     started: 12, completed: 9,
     items: [[K.bamba, 240], [K.mega, 60], [K.forklift, 1, "FL-0412"], [K.scale, 1, "SC-1107"], [K.carton, 40], [K.wrap, 12]],
     units: [
-      { type: "pallet", opened: 6, items: [[0, 240]], close: dest("מרכז הפצה", "0", "רציף 3"), transport: "a" },
+      { type: "pallet", opened: 6, items: [[0, 240]], close: dest("מרכז הפצה", "0", "רציף 3"), transport: "a", collected: 1, collector: 6 },
       { type: "pallet", opened: 6, items: [[1, 60], [4, 40]], close: dest("מרכז הפצה", "0", "רציף 3"), transport: "a" },
       { type: "dolav", opened: 5, items: [[5, 12]], close: dest("מרכז הפצה", "0", "רציף 3"), transport: "a" },
     ],
@@ -134,7 +135,7 @@ const rooms = [
     units: [
       { type: "pallet", opened: 4, items: [[0, 120]], close: dest("סניף באר שבע", "0", "מחסן 2"), transport: "b" },
       { type: "personal_carton", opened: 4, items: [], close: dest("סניף באר שבע", "0", "משרד"), transport: "b" },
-      { type: "pallet", opened: 3, items: [[1, 90], [4, 30]], close: dest("סניף באר שבע", "0", "מחסן 2") },
+      { type: "pallet", opened: 3, items: [[1, 90], [4, 30]], close: dest("סניף באר שבע", "0", "מחסן 2"), transport: "g" },
       { type: "professional_carton", opened: 1, items: [[0, 40]] },
       { type: "dolav", opened: 0, items: [] },
     ],
@@ -197,9 +198,9 @@ const rooms = [
   { n: 12, group: 3, location: 4, name: "משרד סדרן", status: "unstarted", items: [], units: [] },
 ];
 
-// Transports, keyed by the letters the units above point at.
+// Transports, keyed by the letters the units above point at. `received` (days ago) confirms receipt by user `receiver`.
 const transports = [
-  { key: "a", group: 1, status: "arrived", creator: 4, created: 4, transit: 3, arrived: 2, vehicle: ["משאית", "71-402-33"], scheduled: 3,
+  { key: "a", group: 1, status: "arrived", creator: 4, created: 4, transit: 3, arrived: 2, received: 1.5, receiver: 2, vehicle: ["משאית", "71-402-33"], scheduled: 3,
     sourceBuilding: "אולם ייצור", sourceRoom: "קו אריזה 1", destCity: "אשדוד", destUnit: "מרכז הפצה", destBuilding: "מרכז הפצה", destRoom: "רציף 3",
     summary: "משטחי במבה קלאסית ומגה פק" },
   { key: "b", group: 1, status: "transit", creator: 4, created: 2, transit: 0.2, vehicle: ["משאית קירור", "38-119-72"], scheduled: 0.3,
@@ -208,7 +209,7 @@ const transports = [
   { key: "c", group: 1, status: "waiting", creator: 2, created: 0.5, scheduled: -1,
     sourceBuilding: "מחסן תוצרת", sourceRoom: "מחסן במבה מתוקה", destCity: "באר שבע", destUnit: "סניף הפצה", destBuilding: "סניף באר שבע", destRoom: "מחסן 1",
     summary: "במבה מתוקה – הזמנה שבועית", packageCount: 3 },
-  { key: "d", group: 2, status: "transit", creator: 5, created: 2, transit: 1, vehicle: ["משאית", "82-555-10"], scheduled: 1,
+  { key: "d", group: 2, status: "arrived", creator: 5, created: 2, transit: 1, arrived: 0.4, vehicle: ["משאית", "82-555-10"], scheduled: 1,
     sourceBuilding: "אולם ייצור", sourceRoom: "מחסן גריל", destCity: "אשדוד", destUnit: "מרכז הפצה", destBuilding: "מרכז הפצה", destRoom: "רציף 1",
     summary: "ביסלי גריל וברביקיו" },
   { key: "e", group: 2, status: "waiting", creator: 5, created: 0.3, scheduled: -2,
@@ -217,6 +218,9 @@ const transports = [
   { key: "f", group: 3, status: "waiting", creator: 5, created: 1, scheduled: -0.5,
     sourceBuilding: "מרכז הפצה", sourceRoom: "רציף A", destCity: "באר שבע", destUnit: "סניף הפצה", destBuilding: "סניף באר שבע", destRoom: "רציף קבלה",
     summary: "משלוח מעורב במבה וביסלי לסופרמרקטים" },
+  { key: "g", group: 1, status: "arrived", creator: 4, created: 3, transit: 1.5, arrived: 0.5, vehicle: ["טנדר", "45-230-18"], scheduled: 1.5,
+    sourceBuilding: "מחסן תוצרת", sourceRoom: "מחסן נוגט", destCity: "באר שבע", destUnit: "סניף הפצה", destBuilding: "סניף באר שבע", destRoom: "מחסן 2",
+    summary: "במבה נוגט ומגה פק – השלמה" },
 ];
 
 // ---------------------------------------------------------------------------------------------
@@ -520,7 +524,7 @@ async function insertDemo(tx, subcategoryIds) {
       if (unit.transport) {
         if (!unit.close) throw new Error("Only closed units can be assigned to a transport");
         const list = unitsByTransport.get(unit.transport) ?? [];
-        list.push({ id, gid, packer, closedAt });
+        list.push({ id, gid, packer, closedAt, collected: unit.collected, collector: unit.collector });
         unitsByTransport.set(unit.transport, list);
       }
     }
@@ -556,6 +560,9 @@ async function insertDemo(tx, subcategoryIds) {
     const createdAt = at(transport.created);
     const transitAt = transport.transit === undefined ? null : at(transport.transit);
     const arrivedAt = transport.arrived === undefined ? null : at(transport.arrived);
+    const receivedAt = transport.received === undefined ? null : at(transport.received);
+    const receiverId = transport.receiver === undefined ? null : userId(transport.receiver);
+    if (receivedAt && !arrivedAt) throw new Error(`Transport ${transport.key} is received before it arrived`);
 
     transportRows.push({
       id,
@@ -579,8 +586,10 @@ async function insertDemo(tx, subcategoryIds) {
       scheduled_at: at(transport.scheduled),
       transit_at: transitAt,
       arrived_at: arrivedAt,
+      received_at: receivedAt,
+      received_by_user_id: receiverId,
       created_at: createdAt,
-      updated_at: arrivedAt ?? transitAt ?? createdAt,
+      updated_at: receivedAt ?? arrivedAt ?? transitAt ?? createdAt,
     });
     log("transport.created", "transport", id, gid, creatorId, createdAt, { transportNumber });
     exportEvent("transport.created", "transport", id, gid, createdAt, { transportId: id, transportNumber });
@@ -591,12 +600,19 @@ async function insertDemo(tx, subcategoryIds) {
     }
     if (transitAt) log("transport.status_updated", "transport", id, gid, creatorId, transitAt, { from: "waiting", to: "transit" });
     if (arrivedAt) log("transport.status_updated", "transport", id, gid, creatorId, arrivedAt, { from: "transit", to: "arrived" });
+    if (receivedAt) log("transport.receipt_confirmed", "transport", id, gid, receiverId, receivedAt, { transportNumber });
+    for (const unit of units.filter((entry) => entry.collected !== undefined)) {
+      if (!receivedAt) throw new Error(`A unit of transport ${transport.key} is collected before the transport was received`);
+      unit.collectedAt = at(unit.collected);
+      unit.collectorId = userId(unit.collector);
+      log("packing_unit.picked_up", "packing_unit", unit.id, gid, unit.collectorId, unit.collectedAt, {});
+    }
   });
 
   await tx`insert into transports ${tx(transportRows)}`;
   for (const units of unitsByTransport.values()) {
     for (const unit of units) {
-      await tx`update packing_units set transport_id = ${unit.transportId} where id = ${unit.id}`;
+      await tx`update packing_units set transport_id = ${unit.transportId}, collected_at = ${unit.collectedAt ?? null}, collected_by_user_id = ${unit.collectorId ?? null} where id = ${unit.id}`;
     }
   }
 
