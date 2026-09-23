@@ -100,6 +100,13 @@ export function PickupPage({ groupId }: { groupId: string }) {
     {!mode && error && <div className="package-notice error" role="alert">{error}
       {!loaded && <button className="button secondary" onClick={() => { setError(""); setLoading(true); void refresh(); }}>ניסיון נוסף</button>}
     </div>}
+    <div className="pickup-top-actions" aria-label="אפשרויות אישור חבילה">
+      <p className="pickup-action-hint">בחרו דרך לאיתור החבילה ולאישור הקבלה שלה.</p>
+      <div className="pickup-bottom">
+        <button className="button primary" disabled={!loaded || loading} onClick={() => open("scan")}><ScanLine aria-hidden="true" />סריקת קוד לאישור חבילה</button>
+        <button className="button secondary" disabled={!loaded || loading} onClick={() => open("manual")}><Hash aria-hidden="true" />אישור חבילה לפי מספר</button>
+      </div>
+    </div>
     <section className="panel" aria-labelledby="pickup-pending-title" aria-busy={loading}>
       <div className="panel-heading"><div><span className="eyebrow">בדיקה ואישור</span>
         <h2 id="pickup-pending-title">חבילות שממתינות לאישור <span className="pickup-count">{loaded ? state.pending.length : "—"}</span></h2>
@@ -127,10 +134,6 @@ export function PickupPage({ groupId }: { groupId: string }) {
         </article>)}</div>
       </>}
     </section>
-    <div className="pickup-bottom" aria-label="דרכים נוספות לאישור חבילה">
-      <button className="button primary" disabled={!loaded || loading} onClick={() => open("scan")}><ScanLine aria-hidden="true" />סריקת קוד לאישור חבילה</button>
-      <button className="button secondary" disabled={!loaded || loading} onClick={() => open("manual")}><Hash aria-hidden="true" />אישור חבילה לפי מספר</button>
-    </div>
     {mode && <PickupDialog title={mode === "confirm" ? review.length === 1 ? "אישור קבלת חבילה" : "אישור קבלת חבילות" : mode === "manual" ? "אישור חבילה לפי מספר" : "סריקת קוד לאישור חבילה"}
       busy={mode === "confirm" && busy} onClose={close}>
       {error && <p className="package-notice error" role="alert">{error}</p>}
