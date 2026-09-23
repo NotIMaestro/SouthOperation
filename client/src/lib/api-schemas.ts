@@ -104,3 +104,43 @@ export const packingUnitNumberSchema = z
   .trim()
   .regex(/^[0-9]{1,5}$/, "יש להזין מספר יחידת אריזה תקין.")
   .transform((value) => value.padStart(5, "0"));
+
+const optionalText = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .transform((value) => value || null)
+    .nullable()
+    .optional();
+
+export const updateRoomSchema = z
+  .object({
+    name: z.string().trim().min(1).max(160).optional(),
+    description: optionalText(2000),
+    locationId: z.uuid().nullable().optional(),
+    managerName: optionalText(160),
+  })
+  .strict();
+
+export const updateRoomStatusSchema = z.object({ status: z.enum(["in_progress", "completed"]) }).strict();
+
+export const addMembershipSchema = z
+  .object({
+    userId: z.uuid(),
+    role: z.enum(["manager", "commander", "operator"]),
+  })
+  .strict();
+
+export const createCatalogEntrySchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("item_type"), name: z.string().trim().min(1).max(120) }).strict(),
+  z
+    .object({
+      kind: z.literal("category"),
+      itemTypeId: z.uuid(),
+      name: z.string().trim().min(1).max(160),
+      isSpecial: z.boolean().optional(),
+    })
+    .strict(),
+  z.object({ kind: z.literal("subcategory"), categoryId: z.uuid(), name: z.string().trim().min(1).max(160) }).strict(),
+]);

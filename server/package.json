@@ -17,7 +17,11 @@
     "./rooms": "./src/services/rooms.ts",
     "./reports": "./src/services/reports.ts",
     "./packing": "./src/services/packing.ts",
-    "./transports": "./src/services/transports.ts"
+    "./transports": "./src/services/transports.ts",
+    "./memberships": "./src/services/memberships.ts",
+    "./catalog": "./src/services/catalog.ts",
+    "./audit-log": "./src/services/audit-log.ts",
+    "./overview": "./src/services/overview.ts"
   },
   "dependencies": {
     "drizzle-orm": "0.45.3",

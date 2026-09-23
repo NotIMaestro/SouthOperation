@@ -35,6 +35,13 @@ export function errorResponse(error: unknown, requestId: string) {
     );
   }
 
+  if (isUniqueViolation(error)) {
+    return Response.json(
+      { error: { code: "DUPLICATE", message: "כבר קיימת רשומה עם אותם פרטים (למשל שם או מספר סידורי)." }, requestId },
+      { status: 409 },
+    );
+  }
+
   return Response.json(
     {
       error: { code: "INTERNAL_ERROR", message: "The request could not be completed." },
@@ -42,6 +49,13 @@ export function errorResponse(error: unknown, requestId: string) {
     },
     { status: 500 },
   );
+}
+
+export function isUniqueViolation(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  if ("code" in error && error.code === "23505") return true;
+  // Drizzle wraps driver errors; the postgres error is on `cause`.
+  return "cause" in error && isUniqueViolation(error.cause);
 }
 
 export async function parseJson(request: Request) {

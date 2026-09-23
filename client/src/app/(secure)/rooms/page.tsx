@@ -1,12 +1,15 @@
-import { Boxes, Building2 } from "lucide-react";
+import { Boxes } from "lucide-react";
 import Link from "next/link";
 
+import { ActionButton } from "@/components/action-button";
 import { EmptyState } from "@/components/empty-state";
+import { GroupPicker } from "@/components/group-picker";
+import { RoomFormButton } from "@/components/management/room-form-button";
 import { PageHeader } from "@/components/page-header";
 import { roomPackingStatusLabels, roomStatusLabels } from "@/components/packing/labels";
 import { StatusBadge } from "@/components/packing/status-badge";
-import { listGroups, listRoomsForGroup } from "@/lib/server-api";
-import { getSelectedGroupIdFromCookie } from "@/lib/selected-group";
+import { resolveActiveGroup } from "@/lib/active-group";
+import { getViewerAccess, listLocations, listRoomsForGroup } from "@/lib/server-api";
 
 export default async function RoomsPage({
   searchParams,
@@ -14,57 +17,30 @@ export default async function RoomsPage({
   searchParams: Promise<{ groupId?: string }>;
 }) {
   const { groupId: requestedGroupId } = await searchParams;
+  const active = await resolveActiveGroup(requestedGroupId);
 
-  let groupId = requestedGroupId;
-  if (!groupId) {
-    const groupsResult = await listGroups();
-    if (!groupsResult.ok) {
-      return (
-        <main className="page-shell">
-          <PageHeader title="חדרים" description="מעקב אחר מצב המיפוי וההתקדמות בכל חדר" />
-          <EmptyState icon={Boxes} title="שגיאה בטעינת קבוצות" description={groupsResult.message} />
-        </main>
-      );
-    }
-
-    if (groupsResult.data.length === 0) {
-      return (
-        <main className="page-shell">
-          <PageHeader title="חדרים" description="מעקב אחר מצב המיפוי וההתקדמות בכל חדר" />
-          <EmptyState icon={Building2} title="אין קבוצות זמינות" description="אינכם משויכים לאף קבוצה פעילה." />
-        </main>
-      );
-    }
-
-    const cookieGroupId = await getSelectedGroupIdFromCookie();
-    groupId =
-      (cookieGroupId && groupsResult.data.some((group) => group.id === cookieGroupId) ? cookieGroupId : undefined) ??
-      (groupsResult.data.length === 1 ? groupsResult.data[0].id : undefined);
-
-    if (!groupId) {
-      return (
-        <main className="page-shell">
-          <PageHeader title="חדרים" description="בחרו קבוצה כדי להציג את החדרים שלה" />
-          <div className="card-list">
-            {groupsResult.data.map((group) => (
-              <Link className="entity-card" href={`/rooms?groupId=${group.id}`} key={group.id}>
-                <div>
-                  <p className="entity-card-title">{group.name}</p>
-                  <p className="entity-card-meta">{group.groupCode}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </main>
-      );
-    }
+  if (active.kind !== "active") {
+    return (
+      <main className="page-shell">
+        <PageHeader title="מיפוי חדרים" description="בחרו קבוצה כדי להציג את החדרים שלה" />
+        <GroupPicker basePath="/rooms" result={active} />
+      </main>
+    );
   }
 
-  const roomsResult = await listRoomsForGroup(groupId);
+  const groupId = active.group.id;
+  const [roomsResult, accessResult, locationsResult] = await Promise.all([
+    listRoomsForGroup(groupId),
+    getViewerAccess(groupId),
+    listLocations(),
+  ]);
+  const access = accessResult.ok ? accessResult.data : { canManageGroup: false, canCommand: false };
+  const locations = locationsResult.ok ? locationsResult.data : [];
+
   if (!roomsResult.ok) {
     return (
       <main className="page-shell">
-        <PageHeader title="חדרים" description="מעקב אחר מצב המיפוי וההתקדמות בכל חדר" />
+        <PageHeader title="מיפוי חדרים" description="מעקב אחר מצב המיפוי וההתקדמות בכל חדר" />
         <EmptyState icon={Boxes} title="שגיאה בטעינת חדרים" description={roomsResult.message} />
       </main>
     );
@@ -74,28 +50,59 @@ export default async function RoomsPage({
 
   return (
     <main className="page-shell">
-      <PageHeader description="מעקב אחר מצב המיפוי וההתקדמות בכל חדר" title="חדרים" />
+      <PageHeader
+        action={access.canManageGroup ? <RoomFormButton groupId={groupId} locations={locations} /> : undefined}
+        description={`${active.group.name} · התחילו מיפוי, סמנו חדר כממופה כדי לפתוח אותו לאריזה`}
+        title="מיפוי חדרים"
+      />
       {rooms.length === 0 ? (
         <EmptyState
           icon={Boxes}
           title="אין חדרים בקבוצה זו"
-          description="חדרים שנוצרו בקבוצה זו יופיעו כאן."
+          description={access.canManageGroup ? "הוסיפו חדר ראשון כדי להתחיל במיפוי." : "חדרים שנוצרו בקבוצה זו יופיעו כאן."}
         />
       ) : (
         <div className="card-list">
           {rooms.map((room) => {
             const statusInfo = roomStatusLabels[room.status];
             const packingInfo = roomPackingStatusLabels[room.packingStatus];
+            const meta = [room.locationName, room.managerName && `אחראי: ${room.managerName}`, room.description]
+              .filter(Boolean)
+              .join(" · ");
             return (
               <div className="entity-card" key={room.id}>
                 <div>
                   <p className="entity-card-title">{room.name}</p>
-                  {room.description && <p className="entity-card-meta">{room.description}</p>}
+                  {meta && <p className="entity-card-meta">{meta}</p>}
+                  <div className="entity-card-side" style={{ marginTop: "0.5rem" }}>
+                    <StatusBadge label={statusInfo.label} tone={statusInfo.tone} />
+                    {room.status === "completed" && <StatusBadge label={packingInfo.label} tone={packingInfo.tone} />}
+                  </div>
                 </div>
-                <div className="entity-card-side">
-                  <StatusBadge label={statusInfo.label} tone={statusInfo.tone} />
+                <div className="entity-card-actions">
+                  {access.canCommand && room.status === "unstarted" && (
+                    <ActionButton body={{ status: "in_progress" }} url={`/api/v1/rooms/${room.id}/status`} variant="primary">
+                      התחלת מיפוי
+                    </ActionButton>
+                  )}
+                  {access.canCommand && room.status === "in_progress" && (
+                    <ActionButton
+                      body={{ status: "completed" }}
+                      confirmLabel="לסמן כממופה?"
+                      url={`/api/v1/rooms/${room.id}/status`}
+                      variant="primary"
+                    >
+                      סיום מיפוי
+                    </ActionButton>
+                  )}
                   {room.status === "completed" && (
-                    <StatusBadge label={packingInfo.label} tone={packingInfo.tone} />
+                    <Link className="button primary compact" href={`/packing/${room.id}`}>לאריזה</Link>
+                  )}
+                  {access.canManageGroup && <RoomFormButton groupId={groupId} locations={locations} room={room} />}
+                  {access.canManageGroup && (
+                    <ActionButton confirmLabel="לאשר מחיקה?" method="DELETE" url={`/api/v1/rooms/${room.id}`}>
+                      מחיקה
+                    </ActionButton>
                   )}
                 </div>
               </div>

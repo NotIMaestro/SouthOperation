@@ -4,25 +4,20 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useMemo, useState } from "react";
 import { ClipboardCheck, Plus, Search } from "lucide-react";
 
-import { EmptyState } from "@/components/empty-state";
 import { Modal } from "@/components/modal";
-import { reportStatusLabels } from "@/components/packing/labels";
-import { StatusBadge } from "@/components/packing/status-badge";
-import type { ItemCatalogEntry, MappingReport, RoomListItem } from "@/lib/server-api";
+import type { ItemCatalogEntry } from "@/lib/server-api";
 
-export function ReportBoard({
+export function ReportItemButton({
   groupId,
-  reports,
-  rooms,
+  roomId,
   catalog,
 }: {
   groupId: string;
-  reports: MappingReport[];
-  rooms: RoomListItem[];
+  roomId: string;
   catalog: ItemCatalogEntry[];
 }) {
   const router = useRouter();
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [itemTypeId, setItemTypeId] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [subcategoryId, setSubcategoryId] = useState("");
@@ -30,11 +25,6 @@ export function ReportBoard({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [catalogSearch, setCatalogSearch] = useState("");
-
-  const roomNameById = new Map(rooms.map((room) => [room.id, room.name]));
-  const subcategoryLabelById = new Map(
-    catalog.map((entry) => [entry.subcategoryId, `${entry.itemTypeName} / ${entry.categoryName} / ${entry.subcategoryName}`]),
-  );
 
   const itemTypeOptions = useMemo(() => {
     const seen = new Map<string, string>();
@@ -70,7 +60,8 @@ export function ReportBoard({
     setCatalogSearch("");
   }
 
-  function resetForm() {
+  function close() {
+    setIsOpen(false);
     setItemTypeId("");
     setCategoryId("");
     setSubcategoryId("");
@@ -97,7 +88,7 @@ export function ReportBoard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           groupId,
-          roomId: String(formData.get("roomId") ?? ""),
+          roomId,
           subcategoryId,
           quantity,
           serialNumber: serialNumber || undefined,
@@ -106,12 +97,10 @@ export function ReportBoard({
       });
       const payload = await response.json().catch(() => null);
       if (!response.ok) {
-        setError(payload?.error?.message ?? "יצירת הדוח נכשלה.");
+        setError(payload?.error?.message ?? "הוספת הפריט נכשלה.");
         return;
       }
-      setIsCreateOpen(false);
-      resetForm();
-      event.currentTarget.reset();
+      close();
       router.refresh();
     } catch {
       setError("לא ניתן להתחבר לשרת.");
@@ -122,52 +111,18 @@ export function ReportBoard({
 
   return (
     <>
-      <div className="transport-toolbar">
-        <div>
-          <h2>פריטים שמופו</h2>
-          <p className="panel-heading p">כל פריט שמדווח כאן זמין מיד לאריזה</p>
-        </div>
-        <button className="button primary" onClick={() => setIsCreateOpen(true)} type="button">
-          <Plus aria-hidden="true" /> דוח חדש
-        </button>
-      </div>
+      <button className="button secondary" onClick={() => setIsOpen(true)} type="button">
+        <Plus aria-hidden="true" /> הוספת פריט
+      </button>
 
-      {reports.length === 0 ? (
-        <EmptyState icon={ClipboardCheck} title="אין דוחות להצגה" description="דוחות עבור הקבוצה שנבחרה יופיעו כאן." />
-      ) : (
-        <div className="card-list">
-          {reports.map((report) => {
-            const statusInfo = reportStatusLabels[report.status];
-            return (
-              <div className="entity-card" key={report.id}>
-                <div>
-                  <p className="entity-card-title">
-                    {subcategoryLabelById.get(report.subcategoryId) ?? "פריט"} · {roomNameById.get(report.roomId) ?? report.roomId}
-                  </p>
-                  <p className="entity-card-meta">
-                    כמות: {report.quantity}
-                    {report.serialNumber ? ` · מס' סידורי: ${report.serialNumber}` : ""}
-                  </p>
-                </div>
-                <StatusBadge label={statusInfo.label} tone={statusInfo.tone} />
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {isCreateOpen && (
+      {isOpen && (
         <Modal
-          eyebrow={<><ClipboardCheck aria-hidden="true" /> דוח מיפוי חדש</>}
-          onClose={() => { setIsCreateOpen(false); resetForm(); }}
+          eyebrow={<><ClipboardCheck aria-hidden="true" /> פריט חדש בחדר</>}
+          onClose={close}
           title="דיווח על פריט"
           titleId="new-report-title"
         >
             <form className="transport-form" onSubmit={handleSubmit}>
-              <label>חדר<select defaultValue="" name="roomId" required>
-                <option disabled value="">בחירת חדר</option>
-                {rooms.map((room) => <option key={room.id} value={room.id}>{room.name}</option>)}
-              </select></label>
               <label>כמות<input defaultValue={1} min={1} name="quantity" required type="number" disabled={hasSerial} /></label>
               <div className="transport-form-wide catalog-search">
                 <label>חיפוש מהיר בקטלוג<span className="catalog-search-input">
@@ -212,8 +167,8 @@ export function ReportBoard({
               <label className="transport-form-wide">הערות<textarea name="notes" placeholder="פרטים נוספים (לא חובה)" rows={2} /></label>
               {error && <p className="transport-form-error" role="alert">{error}</p>}
               <div className="transport-form-actions">
-                <button className="button secondary" onClick={() => { setIsCreateOpen(false); resetForm(); }} type="button">ביטול</button>
-                <button className="button primary" disabled={pending} type="submit"><Plus aria-hidden="true" /> {pending ? "יוצר..." : "יצירת דוח"}</button>
+                <button className="button secondary" onClick={close} type="button">ביטול</button>
+                <button className="button primary" disabled={pending} type="submit"><Plus aria-hidden="true" /> {pending ? "מוסיף..." : "הוספת פריט"}</button>
               </div>
             </form>
         </Modal>

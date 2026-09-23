@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 
 import { getDb } from "../db";
 import {
@@ -7,6 +7,8 @@ import {
   exportOutbox,
   itemTypes,
   mappingReports,
+  packingUnitItems,
+  packingUnits,
   rooms,
   subcategories,
 } from "../db/schema";
@@ -47,17 +49,17 @@ export async function listReports(groupId: string) {
     .orderBy(desc(mappingReports.createdAt));
 }
 
-export async function countSubmittedReportsForGroups(groupIds: string[]) {
+/** Total mapped item quantity (not report rows) across the groups' live rooms. */
+export async function countMappedItemsForGroups(groupIds: string[]) {
   if (groupIds.length === 0) return 0;
 
   const [row] = await getDb()
-    .select({ value: count() })
+    .select({ value: sql<number>`coalesce(sum(${mappingReports.quantity}), 0)`.mapWith(Number) })
     .from(mappingReports)
     .innerJoin(rooms, eq(mappingReports.roomId, rooms.id))
     .where(
       and(
         inArray(rooms.groupId, groupIds),
-        eq(mappingReports.status, "submitted"),
         isNull(rooms.archivedAt),
         isNull(mappingReports.archivedAt),
       ),
@@ -165,4 +167,63 @@ export async function createReport(
   });
 
   return { id: reportId, groupId, ...input, status: "approved" as const };
+}
+
+export async function archiveReport(actor: Actor, reportId: string, requestId: string) {
+  const db = getDb();
+  const [report] = await db
+    .select({ id: mappingReports.id, roomId: mappingReports.roomId, groupId: rooms.groupId })
+    .from(mappingReports)
+    .innerJoin(rooms, eq(mappingReports.roomId, rooms.id))
+    .where(and(eq(mappingReports.id, reportId), isNull(mappingReports.archivedAt)))
+    .limit(1);
+
+  if (!report) {
+    throw new HttpError(404, "NOT_FOUND", "The requested resource was not found.");
+  }
+
+  const [packed] = await db
+    .select({ value: count() })
+    .from(packingUnitItems)
+    .innerJoin(packingUnits, eq(packingUnitItems.packingUnitId, packingUnits.id))
+    .where(and(eq(packingUnitItems.mappingReportId, reportId), isNull(packingUnits.archivedAt)));
+
+  if (packed.value > 0) {
+    throw new HttpError(409, "REPORT_ALREADY_PACKED", "לא ניתן למחוק פריט שכבר נארז ביחידת אריזה.");
+  }
+
+  const occurredAt = new Date();
+  await db.transaction(async (transaction) => {
+    await transaction
+      .update(mappingReports)
+      .set({ archivedAt: occurredAt, updatedAt: occurredAt })
+      .where(eq(mappingReports.id, reportId));
+    await transaction.insert(auditEvents).values({
+      actorUserId: actor.id,
+      action: "mapping_report.archived",
+      entityType: "mapping_report",
+      entityId: reportId,
+      groupId: report.groupId,
+      requestId,
+      metadata: { roomId: report.roomId },
+      occurredAt,
+    });
+  });
+
+  return { id: reportId };
+}
+
+export async function getReportGroupId(reportId: string) {
+  const [report] = await getDb()
+    .select({ groupId: rooms.groupId })
+    .from(mappingReports)
+    .innerJoin(rooms, eq(mappingReports.roomId, rooms.id))
+    .where(and(eq(mappingReports.id, reportId), isNull(mappingReports.archivedAt)))
+    .limit(1);
+
+  if (!report) {
+    throw new HttpError(404, "NOT_FOUND", "The requested resource was not found.");
+  }
+
+  return report.groupId;
 }

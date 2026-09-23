@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { Search } from "lucide-react";
 
 import type { PackableItem } from "@/lib/server-api";
@@ -11,9 +11,11 @@ type SelectionState = Record<string, { checked: boolean; quantity: number }>;
 export function PackingUnitItemPicker({
   packingUnitId,
   items,
+  addItemAction,
 }: {
   packingUnitId: string;
   items: PackableItem[];
+  addItemAction?: ReactNode;
 }) {
   const router = useRouter();
   const [selected, setSelected] = useState<SelectionState>({});
@@ -99,7 +101,13 @@ export function PackingUnitItemPicker({
   }
 
   if (items.length === 0) {
-    return <p className="hint">לא נמצאו פריטים ממופים וממתינים לאריזה בחדר זה.</p>;
+    return (
+      <div className="form-card">
+        <h2>בחירת פריטים לאריזה</h2>
+        <p className="hint">לא נמצאו פריטים ממופים וממתינים לאריזה בחדר זה.</p>
+        {addItemAction && <div className="form-actions">{addItemAction}</div>}
+      </div>
+    );
   }
 
   return (
@@ -119,6 +127,7 @@ export function PackingUnitItemPicker({
         <button className="button secondary" onClick={toggleSelectAll} type="button">
           {allFilteredSelected ? "נקה בחירה" : "בחר הכל"}
         </button>
+        {addItemAction}
       </div>
       {filteredItems.length === 0 && <p className="hint">לא נמצאו פריטים תואמים לחיפוש.</p>}
       <div className="item-picker">

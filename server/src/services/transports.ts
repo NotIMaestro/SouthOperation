@@ -275,3 +275,35 @@ export async function listWaitingTransportsForAssignment(groupId: string) {
   const rows = await listTransportsForGroup(groupId, "waiting");
   return rows.map((row) => ({ id: row.id, transportNumber: row.transportNumber }));
 }
+
+export async function archiveTransport(actor: Actor, transportId: string, requestId: string) {
+  const transport = await loadTransportForGroup(transportId);
+
+  if (transport.status !== "waiting") {
+    throw new HttpError(409, "TRANSPORT_NOT_WAITING", "ניתן למחוק רק הובלה שטרם יצאה לדרך.");
+  }
+
+  const occurredAt = new Date();
+  await getDb().transaction(async (transaction) => {
+    await transaction
+      .update(packingUnits)
+      .set({ transportId: null, updatedAt: occurredAt })
+      .where(eq(packingUnits.transportId, transportId));
+    await transaction
+      .update(transports)
+      .set({ archivedAt: occurredAt, updatedAt: occurredAt })
+      .where(eq(transports.id, transportId));
+    await transaction.insert(auditEvents).values({
+      actorUserId: actor.id,
+      action: "transport.archived",
+      entityType: "transport",
+      entityId: transportId,
+      groupId: transport.groupId,
+      requestId,
+      metadata: { transportNumber: transport.transportNumber },
+      occurredAt,
+    });
+  });
+
+  return { id: transportId };
+}

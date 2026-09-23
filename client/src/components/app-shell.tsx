@@ -1,4 +1,8 @@
 import {
+  Boxes,
+  Building2,
+  FileClock,
+  Library,
   Menu,
   LogOut,
   PackageCheck,
@@ -25,9 +29,13 @@ const links = [
 ];
 
 const managementLinks = [
+  { href: "/rooms", label: "מיפוי חדרים", icon: Boxes },
   { href: "/package-status", label: "סטטוס חבילות משוייכות", icon: PackageCheck },
   { href: "/memberships", label: "הצגת בכירים", icon: Waypoints },
   { href: "/logistics", label: "הצגת לוגיסטיקה", icon: Waypoints },
+  { href: "/groups", label: "קבוצות", icon: Building2 },
+  { href: "/catalog", label: "קטלוג פריטים", icon: Library },
+  { href: "/audit", label: "יומן ביקורת", icon: FileClock },
 ];
 
 function localGreeting(name?: string | null) {

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { TransportBoard } from "@/components/transport/transport-board";
-import { listGroups, listTransportsForGroup } from "@/lib/server-api";
+import { getViewerAccess, listGroups, listPackingUnitsWithStage, listTransportsForGroup } from "@/lib/server-api";
 import { getSelectedGroupIdFromCookie } from "@/lib/selected-group";
 
 export default async function TransportPage({
@@ -58,7 +58,11 @@ export default async function TransportPage({
     );
   }
 
-  const transportsResult = await listTransportsForGroup(activeGroupId);
+  const [transportsResult, unitsResult, accessResult] = await Promise.all([
+    listTransportsForGroup(activeGroupId),
+    listPackingUnitsWithStage(activeGroupId),
+    getViewerAccess(activeGroupId),
+  ]);
   if (!transportsResult.ok) {
     return (
       <main className="page-shell">
@@ -71,7 +75,12 @@ export default async function TransportPage({
   return (
     <main className="page-shell">
       <PageHeader title="הובלת חבילות" description="תכנון, מעקב וניהול משימות שינוע במערכת" />
-      <TransportBoard groupId={activeGroupId} transports={transportsResult.data} />
+      <TransportBoard
+        canDelete={accessResult.ok && accessResult.data.canCommand}
+        groupId={activeGroupId}
+        packingUnits={unitsResult.ok ? unitsResult.data : []}
+        transports={transportsResult.data}
+      />
     </main>
   );
 }
