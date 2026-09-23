@@ -63,8 +63,7 @@ export function TransportBoard({
     ? packingUnits.filter((unit) => unit.transportId === selectedTransport.id)
     : [];
 
-  const filteredTransports = useMemo(() => {
-    return displayedTransports.filter((item) => {
+  const filteredTransports = displayedTransports.filter((item) => {
       const searchContent = [
         item.transportNumber,
         item.createdByName,
@@ -80,8 +79,7 @@ export function TransportBoard({
         searchContent.includes(searchTerm.trim().toLowerCase()) &&
         (statusFilter === "all" || item.status === statusFilter)
       );
-    });
-  }, [displayedTransports, searchTerm, statusFilter]);
+  });
 
   const counts = useMemo(
     () => ({
@@ -89,6 +87,7 @@ export function TransportBoard({
       waiting: transports.filter((item) => item.status === "waiting").length,
       transit: transports.filter((item) => item.status === "transit").length,
       arrived: transports.filter((item) => item.status === "arrived").length,
+      received: transports.filter((item) => item.receivedAt).length,
     }),
     [transports],
   );
@@ -239,6 +238,7 @@ export function TransportBoard({
         <article className="metric-card">
           <div><span>הגיעו ליעד</span><CheckCircle2 aria-hidden="true" /></div>
           <strong>{counts.arrived}</strong>
+          <small>{counts.received} מהן אושרה קבלתן</small>
         </article>
       </section>
 
@@ -314,6 +314,7 @@ export function TransportBoard({
           titleId="transport-details-title"
         >
             <div className="transport-details-grid">
+              <div><small>קבלת ההובלה</small><strong>{selectedTransport.receivedAt ? `התקבלה ואושרה ${formatDate(selectedTransport.receivedAt)}` : selectedTransport.status === "arrived" ? "ממתינה לאישור קבלה" : "טרם הגיעה ליעד"}</strong></div>
               <div><small>שם יוצר ההובלה</small><strong>{selectedTransport.createdByName}</strong></div>
               <div className="transport-detail-wide"><small>מיקום יציאה</small><strong>{selectedTransport.sourceCity}, {selectedTransport.sourceUnit}, {selectedTransport.sourceBuilding}, חדר {selectedTransport.sourceRoom}</strong></div>
               <div className="transport-detail-wide"><small>מיקום יעד</small><strong>{selectedTransport.destinationCity}, {selectedTransport.destinationUnit}, {selectedTransport.destinationBuilding}, חדר {selectedTransport.destinationRoom}</strong></div>

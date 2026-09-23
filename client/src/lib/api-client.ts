@@ -1,3 +1,12 @@
+/** The shape a server value takes after a JSON round trip. */
+export type Serialized<T> = T extends Date
+  ? string
+  : T extends (infer U)[]
+    ? Serialized<U>[]
+    : T extends object
+      ? { [K in keyof T]: Serialized<T[K]> }
+      : T;
+
 export type ApiCallResult<T = unknown> = { ok: true; data: T } | { ok: false; message: string };
 
 const fallbackMessages: Record<string, string> = {
@@ -11,7 +20,7 @@ const fallbackMessages: Record<string, string> = {
 /** JSON fetch against our API; returns a Hebrew message on failure instead of throwing. */
 export async function callApi<T = unknown>(
   url: string,
-  { method = "POST", body }: { method?: "POST" | "PATCH" | "DELETE"; body?: unknown } = {},
+  { method = "POST", body }: { method?: "GET" | "POST" | "PATCH" | "DELETE"; body?: unknown } = {},
 ): Promise<ApiCallResult<T>> {
   try {
     const response = await fetch(url, {

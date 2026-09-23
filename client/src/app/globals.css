@@ -317,6 +317,20 @@ a.entity-card:hover { border-color: var(--brand); transform: translateY(-1px); t
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
 }
 
+.delivery-filters { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .85rem; margin-top: 1.5rem; }
+.delivery-filters .package-field { margin: 0; }
+.delivery-filters .package-actions { grid-column: 1 / -1; }
+.delivery-receiving .pickup-number { max-width: 7.5rem; }
+.delivery-receiving .pickup-number small { font-size: .7rem; }
+.delivery-packages { padding-inline-start: 1.4rem; margin: 1rem 0 0; }
+.delivery-review-group .delivery-packages > li { display: list-item; border-top: 1px solid var(--line); padding: .85rem 0; font-size: .9rem; }
+.delivery-review-group .delivery-packages > li > strong { white-space: normal; }
+.delivery-receiving :focus-visible { outline: 3px solid #789c40; outline-offset: 3px; }
+.delivery-packages details { margin-top: .65rem; }
+.delivery-packages summary { cursor: pointer; min-height: 44px; padding-block: .65rem; color: var(--brand); font-weight: 600; }
+.delivery-review-group .delivery-packages ul { list-style: none; padding: 0; }
+@media (max-width: 700px) { .delivery-filters { grid-template-columns: 1fr; } .delivery-filters .package-actions > button { flex: 1; } }
+
 /* Collection rows retain checkbox / description / number order at every width. */
 .pickup-list { display: grid; gap: .65rem; margin-top: 1.25rem; }
 .pickup-row { display: grid; grid-template-columns: 2.75rem minmax(0,1fr) auto; align-items: center; gap: .65rem; padding: .85rem .6rem; border: 1px solid var(--line); border-radius: .8rem; cursor: pointer; background: white; }

@@ -1,0 +1,8 @@
+ALTER TABLE "packing_units" ADD COLUMN "collected_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "packing_units" ADD COLUMN "collected_by_user_id" uuid;--> statement-breakpoint
+ALTER TABLE "transports" ADD COLUMN "received_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "transports" ADD COLUMN "received_by_user_id" uuid;--> statement-breakpoint
+ALTER TABLE "packing_units" ADD CONSTRAINT "packing_units_collected_by_user_id_users_id_fk" FOREIGN KEY ("collected_by_user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "transports" ADD CONSTRAINT "transports_received_by_user_id_users_id_fk" FOREIGN KEY ("received_by_user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "packing_units" ADD CONSTRAINT "packing_units_collection_check" CHECK (("packing_units"."collected_at" IS NULL AND "packing_units"."collected_by_user_id" IS NULL) OR ("packing_units"."status" = 'closed' AND "packing_units"."collected_at" IS NOT NULL AND "packing_units"."collected_by_user_id" IS NOT NULL));--> statement-breakpoint
+ALTER TABLE "transports" ADD CONSTRAINT "transports_receipt_check" CHECK (("transports"."received_at" IS NULL AND "transports"."received_by_user_id" IS NULL) OR ("transports"."status" = 'arrived' AND "transports"."received_at" IS NOT NULL AND "transports"."received_by_user_id" IS NOT NULL));

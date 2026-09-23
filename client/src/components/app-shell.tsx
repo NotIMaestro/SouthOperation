@@ -6,7 +6,6 @@ import {
   Menu,
   LogOut,
   PackageCheck,
-  PackageOpen,
   ScanLine,
   ShieldCheck,
   Truck,
@@ -24,7 +23,7 @@ import { NavigationLink } from "./navigation-link";
 const links = [
   { href: "/packing", label: "אריזת חבילות", icon: PackageCheck },
   { href: "/transport", label: "הובלת חבילות", icon: Truck },
-  { href: "/receiving", label: "קבלת חבילות", icon: PackageOpen },
+  { href: "/receiving", label: "קבלת הובלות", icon: Truck },
   { href: "/pickup", label: "איסוף חבילות", icon: PackageCheck },
 ];
 

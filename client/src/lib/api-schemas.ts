@@ -104,6 +104,17 @@ export const addTransportPackagesSchema = z
   })
   .strict();
 
+const uniqueIds = (max: number) =>
+  z
+    .array(z.uuid())
+    .min(1)
+    .max(max)
+    .refine((ids) => new Set(ids).size === ids.length, "Duplicate identifiers.");
+
+export const confirmReceiptSchema = z.object({ transportIds: uniqueIds(200) }).strict();
+
+export const confirmPickupSchema = z.object({ packingUnitIds: uniqueIds(1000) }).strict();
+
 export const assignPackingUnitTransportSchema = z.object({ transportId: z.uuid() }).strict();
 
 export const packingUnitNumberSchema = z

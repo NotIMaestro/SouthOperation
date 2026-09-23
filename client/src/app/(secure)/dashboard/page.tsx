@@ -19,8 +19,8 @@ import { getDashboardMetrics } from "@/lib/server-api";
 const primaryTiles = [
   { href: "/packing", label: "אריזה", sub: "אריזת ציוד מחדר", icon: PackageCheck },
   { href: "/transport", label: "הובלה", sub: "העמסה על רכב", icon: Truck },
-  { href: "/receiving", label: "קבלת ציוד", sub: "פריקת הובלה", icon: PackageOpen },
-  { href: "/pickup", label: "איסוף ציוד", sub: "לחדרי היעד", icon: PackageCheck },
+  { href: "/receiving", label: "קבלת הובלות", sub: "פריקת הובלה", icon: PackageOpen },
+  { href: "/pickup", label: "איסוף חבילות", sub: "לחדרי היעד", icon: PackageCheck },
 ];
 
 const secondaryTiles = [
@@ -110,6 +110,7 @@ export default async function DashboardPage() {
             <Link href="/groups">צפייה בקבוצות <ArrowUpLeft /></Link>
             <Link href="/rooms">מיפוי חדרים <ArrowUpLeft /></Link>
             <Link href="/logistics">תמונת מצב לוגיסטית <ArrowUpLeft /></Link>
+            <Link href="/receiving">קבלת הובלות <ArrowUpLeft /></Link>
             <Link href="/audit">בדיקת יומן ביקורת <ArrowUpLeft /></Link>
           </article>
         </section>

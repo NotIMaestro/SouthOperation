@@ -18,6 +18,7 @@
     "./reports": "./src/services/reports.ts",
     "./packing": "./src/services/packing.ts",
     "./transports": "./src/services/transports.ts",
+    "./receiving": "./src/services/receiving.ts",
     "./memberships": "./src/services/memberships.ts",
     "./catalog": "./src/services/catalog.ts",
     "./audit-log": "./src/services/audit-log.ts",

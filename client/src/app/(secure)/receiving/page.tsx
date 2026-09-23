@@ -1,81 +1,31 @@
-import { Building2, PackageOpen } from "lucide-react";
-import Link from "next/link";
-
-import { EmptyState } from "@/components/empty-state";
+import { GroupPicker } from "@/components/group-picker";
 import { PageHeader } from "@/components/page-header";
-import { ReceivingList } from "@/components/transport/receiving-list";
-import { listGroups, listTransportsForGroup } from "@/lib/server-api";
-import { getSelectedGroupIdFromCookie } from "@/lib/selected-group";
+import { ReceivingPage } from "@/components/receiving/receiving-page";
+import { resolveActiveGroup } from "@/lib/active-group";
 
-export default async function ReceivingPage({
+export const metadata = { title: "קבלת הובלות" };
+
+export default async function DeliveryReceivingPage({
   searchParams,
 }: {
   searchParams: Promise<{ groupId?: string }>;
 }) {
   const { groupId: requestedGroupId } = await searchParams;
+  const active = await resolveActiveGroup(requestedGroupId);
 
-  const groupsResult = await listGroups();
-  if (!groupsResult.ok) {
+  if (active.kind !== "active") {
     return (
       <main className="page-shell">
-        <PageHeader title="קבלת חבילות" description="קליטת חבילות שהגיעו ליעדן ובדיקתן" />
-        <EmptyState icon={PackageOpen} title="שגיאה בטעינת קבוצות" description={groupsResult.message} />
-      </main>
-    );
-  }
-
-  const groups = groupsResult.data;
-  if (groups.length === 0) {
-    return (
-      <main className="page-shell">
-        <PageHeader title="קבלת חבילות" description="קליטת חבילות שהגיעו ליעדן ובדיקתן" />
-        <EmptyState icon={Building2} title="אין קבוצות זמינות" description="אינכם משויכים לאף קבוצה פעילה." />
-      </main>
-    );
-  }
-
-  const cookieGroupId = await getSelectedGroupIdFromCookie();
-  const activeGroupId =
-    (requestedGroupId && groups.some((group) => group.id === requestedGroupId) ? requestedGroupId : undefined) ??
-    (cookieGroupId && groups.some((group) => group.id === cookieGroupId) ? cookieGroupId : undefined) ??
-    (groups.length === 1 ? groups[0].id : undefined);
-
-  if (!activeGroupId) {
-    return (
-      <main className="page-shell">
-        <PageHeader description="בחרו קבוצה כדי להציג את ההובלות שבדרך" title="קבלת חבילות" />
-        <div className="card-list">
-          {groups.map((group) => (
-            <Link className="entity-card" href={`/receiving?groupId=${group.id}`} key={group.id}>
-              <div>
-                <p className="entity-card-title">{group.name}</p>
-                <p className="entity-card-meta">{group.groupCode}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </main>
-    );
-  }
-
-  const transportsResult = await listTransportsForGroup(activeGroupId, "arrived");
-  if (!transportsResult.ok) {
-    return (
-      <main className="page-shell">
-        <PageHeader title="קבלת חבילות" description="קליטת חבילות שהגיעו ליעדן ובדיקתן" />
-        <EmptyState icon={PackageOpen} title="שגיאה בטעינת הובלות" description={transportsResult.message} />
+        <PageHeader title="קבלת הובלות" description="בחרו קבוצה כדי להציג את ההובלות שהגיעו ליעד" />
+        <GroupPicker basePath="/receiving" result={active} />
       </main>
     );
   }
 
   return (
-    <main className="page-shell">
-      <PageHeader title="קבלת חבילות" description="הובלות שהגיעו ליעדן בקבוצה זו." />
-      {transportsResult.data.length === 0 ? (
-        <EmptyState icon={PackageOpen} title="אין חבילות שהגיעו ליעד" description="הובלות במצב הגיע ליעד יופיעו כאן." />
-      ) : (
-        <ReceivingList transports={transportsResult.data} />
-      )}
+    <main className="page-shell package-page" dir="rtl" lang="he" tabIndex={-1}>
+      <PageHeader title="קבלת הובלות" description={`${active.group.name} · בחרו את ההובלות שהגיעו ליעד, בדקו את החבילות המשויכות אליהן ואשרו את קבלתן.`} />
+      <ReceivingPage groupId={active.group.id} key={active.group.id} />
     </main>
   );
 }

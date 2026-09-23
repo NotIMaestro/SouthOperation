@@ -355,6 +355,10 @@ export const transports = pgTable(
     scheduledAt: timestamp("scheduled_at", { withTimezone: true }),
     transitAt: timestamp("transit_at", { withTimezone: true }),
     arrivedAt: timestamp("arrived_at", { withTimezone: true }),
+    receivedAt: timestamp("received_at", { withTimezone: true }),
+    receivedByUserId: uuid("received_by_user_id").references(() => users.id, {
+      onDelete: "restrict",
+    }),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -370,6 +374,10 @@ export const transports = pgTable(
     check(
       "transports_status_check",
       sql`(${table.status} = 'waiting' AND ${table.transitAt} IS NULL AND ${table.arrivedAt} IS NULL) OR (${table.status} = 'transit' AND ${table.transitAt} IS NOT NULL AND ${table.vehicleType} IS NOT NULL AND ${table.vehicleNumber} IS NOT NULL AND ${table.arrivedAt} IS NULL) OR (${table.status} = 'arrived' AND ${table.transitAt} IS NOT NULL AND ${table.arrivedAt} IS NOT NULL)`,
+    ),
+    check(
+      "transports_receipt_check",
+      sql`(${table.receivedAt} IS NULL AND ${table.receivedByUserId} IS NULL) OR (${table.status} = 'arrived' AND ${table.receivedAt} IS NOT NULL AND ${table.receivedByUserId} IS NOT NULL)`,
     ),
   ],
 );
@@ -392,6 +400,10 @@ export const packingUnits = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "restrict" }),
     closedAt: timestamp("closed_at", { withTimezone: true }),
+    collectedAt: timestamp("collected_at", { withTimezone: true }),
+    collectedByUserId: uuid("collected_by_user_id").references(() => users.id, {
+      onDelete: "restrict",
+    }),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -410,6 +422,10 @@ export const packingUnits = pgTable(
     check(
       "packing_units_status_check",
       sql`(${table.status} IN ('awaiting_packing', 'packing_in_progress') AND ${table.unitNumber} IS NULL AND ${table.closedAt} IS NULL) OR (${table.status} = 'closed' AND ${table.unitNumber} IS NOT NULL AND ${table.closedAt} IS NOT NULL AND ${table.destinationBuilding} IS NOT NULL AND ${table.destinationRoom} IS NOT NULL)`,
+    ),
+    check(
+      "packing_units_collection_check",
+      sql`(${table.collectedAt} IS NULL AND ${table.collectedByUserId} IS NULL) OR (${table.status} = 'closed' AND ${table.collectedAt} IS NOT NULL AND ${table.collectedByUserId} IS NOT NULL)`,
     ),
   ],
 );
