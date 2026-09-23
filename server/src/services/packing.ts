@@ -524,3 +524,33 @@ export async function closeRoomPacking(actor: Actor, roomId: string, requestId: 
 export async function pauseRoomPacking(actor: Actor, roomId: string, requestId: string) {
   return transitionRoomPacking(actor, roomId, "paused", requestId);
 }
+
+export async function archivePackingUnit(actor: Actor, packingUnitId: string, requestId: string) {
+  const unit = await loadPackingUnitForGroup(packingUnitId);
+
+  if (unit.status === "closed") {
+    throw new HttpError(409, "PACKING_UNIT_CLOSED", "לא ניתן לבטל יחידת אריזה שכבר נסגרה.");
+  }
+
+  const occurredAt = new Date();
+  // Its item lines stay for history; archived units are excluded from packed-quantity sums,
+  // so the items become packable again.
+  await getDb().transaction(async (transaction) => {
+    await transaction
+      .update(packingUnits)
+      .set({ archivedAt: occurredAt, updatedAt: occurredAt })
+      .where(eq(packingUnits.id, packingUnitId));
+    await transaction.insert(auditEvents).values({
+      actorUserId: actor.id,
+      action: "packing_unit.archived",
+      entityType: "packing_unit",
+      entityId: packingUnitId,
+      groupId: unit.groupId,
+      requestId,
+      metadata: { roomId: unit.roomId },
+      occurredAt,
+    });
+  });
+
+  return { id: packingUnitId, roomId: unit.roomId };
+}

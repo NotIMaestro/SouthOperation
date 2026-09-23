@@ -5,7 +5,7 @@ import { Building2 } from "lucide-react";
 
 import { SELECTED_GROUP_COOKIE } from "@/lib/selected-group-cookie-name";
 
-const flowRoots = ["/packing", "/transport", "/receiving", "/pickup", "/rooms", "/package-status"];
+const flowRoots = ["/packing", "/transport", "/receiving", "/pickup", "/rooms", "/package-status", "/memberships"];
 
 export function GroupSwitcher({
   groups,

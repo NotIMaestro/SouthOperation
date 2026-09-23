@@ -115,3 +115,22 @@ export async function requireGroupAccess(
 export async function requireGroupManager(actor: Actor, groupId: string) {
   return requireGroupAccess(actor, groupId, ["manager"]);
 }
+
+/** The actor's effective role in a group: "admin" for global admins, else their live membership role. */
+export async function getGroupRole(actor: Actor, groupId: string): Promise<MembershipRole | "admin" | null> {
+  if (actor.role === "admin") return "admin";
+
+  const [membership] = await getDb()
+    .select({ role: memberships.role })
+    .from(memberships)
+    .where(
+      and(
+        eq(memberships.userId, actor.id),
+        eq(memberships.groupId, groupId),
+        isNull(memberships.archivedAt),
+      ),
+    )
+    .limit(1);
+
+  return membership?.role ?? null;
+}

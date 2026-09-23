@@ -2,15 +2,18 @@ import { PackageCheck } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { ActionButton } from "@/components/action-button";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { packingUnitStatusLabels, packingUnitTypeLabels } from "@/components/packing/labels";
 import { ClosePackingUnitForm } from "@/components/packing/close-packing-unit-form";
 import { PackingUnitItemPicker } from "@/components/packing/packing-unit-item-picker";
 import { PackingUnitQr } from "@/components/packing/packing-unit-qr";
+import { ReportItemButton } from "@/components/packing/report-item-modal";
 import { StatusBadge } from "@/components/packing/status-badge";
 import {
   getRoom,
+  listItemCatalog,
   listPackableItems,
   listPackingUnitsForRoom,
   listWaitingTransportsForAssignment,
@@ -51,7 +54,9 @@ export default async function PackingUnitPage({
     unit.status === "packing_in_progress" ||
     (unit.status === "awaiting_packing" && unit.unitType === "personal_carton");
 
-  const packableItemsResult = needsItemPicker ? await listPackableItems(roomId) : undefined;
+  const [packableItemsResult, catalogResult] = needsItemPicker
+    ? await Promise.all([listPackableItems(roomId), listItemCatalog()])
+    : [undefined, undefined];
   const waitingTransportsResult =
     unit.status === "closed" && !unit.transportId
       ? await listWaitingTransportsForAssignment(room.groupId)
@@ -103,7 +108,15 @@ export default async function PackingUnitPage({
           <>
             {needsItemPicker &&
               (packableItemsResult?.ok ? (
-                <PackingUnitItemPicker items={packableItemsResult.data} packingUnitId={unit.id} />
+                <PackingUnitItemPicker
+                  addItemAction={
+                    catalogResult?.ok && (
+                      <ReportItemButton catalog={catalogResult.data} groupId={room.groupId} roomId={roomId} />
+                    )
+                  }
+                  items={packableItemsResult.data}
+                  packingUnitId={unit.id}
+                />
               ) : (
                 <EmptyState
                   description={packableItemsResult?.ok === false ? packableItemsResult.message : ""}
@@ -112,6 +125,16 @@ export default async function PackingUnitPage({
                 />
               ))}
             {canClose && <ClosePackingUnitForm packingUnitId={unit.id} roomId={roomId} />}
+            <div className="form-actions">
+              <ActionButton
+                confirmLabel="לבטל את היחידה?"
+                method="DELETE"
+                redirectTo={`/packing/${roomId}`}
+                url={`/api/v1/packing-units/${unit.id}`}
+              >
+                ביטול יחידת האריזה
+              </ActionButton>
+            </div>
           </>
         )}
       </div>

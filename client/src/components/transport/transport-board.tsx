@@ -13,8 +13,9 @@ import {
   Truck,
 } from "lucide-react";
 
-import type { Transport } from "@/lib/server-api";
-import { transportStatusLabels } from "@/components/packing/labels";
+import type { PackingUnitStage, Transport } from "@/lib/server-api";
+import { ActionButton } from "@/components/action-button";
+import { packingUnitTypeLabels, transportStatusLabels } from "@/components/packing/labels";
 import { Modal } from "@/components/modal";
 import { getRemembered, setRemembered } from "@/lib/remembered-values";
 
@@ -25,7 +26,17 @@ function formatDate(value: Date | string | null) {
   return new Intl.DateTimeFormat("he-IL", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 }
 
-export function TransportBoard({ groupId, transports }: { groupId: string; transports: Transport[] }) {
+export function TransportBoard({
+  groupId,
+  transports,
+  packingUnits,
+  canDelete,
+}: {
+  groupId: string;
+  transports: Transport[];
+  packingUnits: PackingUnitStage[];
+  canDelete: boolean;
+}) {
   const router = useRouter();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [createError, setCreateError] = useState("");
@@ -43,8 +54,14 @@ export function TransportBoard({ groupId, transports }: { groupId: string; trans
   const [additionalPackageSummary, setAdditionalPackageSummary] = useState("");
   const [savingPackages, setSavingPackages] = useState(false);
 
-  const displayedTransports = transports.map((item) => ({ ...item, ...packageOverrides[item.id] }));
+  const displayedTransports = useMemo(
+    () => transports.map((item) => ({ ...item, ...packageOverrides[item.id] })),
+    [transports, packageOverrides],
+  );
   const selectedTransport = displayedTransports.find((item) => item.id === selectedId) ?? null;
+  const selectedUnits = selectedTransport
+    ? packingUnits.filter((unit) => unit.transportId === selectedTransport.id)
+    : [];
 
   const filteredTransports = useMemo(() => {
     return displayedTransports.filter((item) => {
@@ -90,7 +107,8 @@ export function TransportBoard({ groupId, transports }: { groupId: string; trans
     event.preventDefault();
     setCreating(true);
     setCreateError("");
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     const scheduledAtRaw = String(formData.get("scheduledAt") ?? "");
     try {
       const response = await fetch(`/api/v1/groups/${groupId}/transports`, {
@@ -117,7 +135,7 @@ export function TransportBoard({ groupId, transports }: { groupId: string; trans
         return;
       }
       setIsCreateOpen(false);
-      event.currentTarget.reset();
+      form.reset();
       router.refresh();
     } catch {
       setCreateError("לא ניתן להתחבר לשרת.");
@@ -309,6 +327,16 @@ export function TransportBoard({ groupId, transports }: { groupId: string; trans
               )}
               <div><small>מספר חבילות</small><strong>{selectedTransport.packageCount}</strong></div>
               <div className="transport-detail-wide"><small>מה יש בחבילות</small><strong>{selectedTransport.packageSummary || "לא צוין"}</strong></div>
+              <div className="transport-detail-wide">
+                <small>יחידות אריזה משויכות ({selectedUnits.length})</small>
+                <strong>
+                  {selectedUnits.length === 0
+                    ? "אין עדיין. ניתן לשייך יחידה סגורה מעמוד היחידה באריזה."
+                    : selectedUnits
+                        .map((unit) => `${unit.unitNumber} · ${packingUnitTypeLabels[unit.unitType]} · ${unit.roomName}`)
+                        .join("\n")}
+                </strong>
+              </div>
             </div>
             {selectedTransport.status === "waiting" && (
               <div className="transport-package-editor">
@@ -364,6 +392,17 @@ export function TransportBoard({ groupId, transports }: { groupId: string; trans
                 <button className="button primary" disabled={savingStatus} onClick={saveStatus} type="button">
                   {savingStatus ? "שומר..." : "שמירת מצב ופרטי רכב"}
                 </button>
+              </div>
+            )}
+            {canDelete && selectedTransport.status === "waiting" && (
+              <div className="transport-form-actions">
+                <ActionButton
+                  confirmLabel="לאשר מחיקת הובלה?"
+                  method="DELETE"
+                  url={`/api/v1/transports/${selectedTransport.id}`}
+                >
+                  מחיקת הובלה
+                </ActionButton>
               </div>
             )}
         </Modal>

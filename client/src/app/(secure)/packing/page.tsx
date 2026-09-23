@@ -73,7 +73,11 @@ export default async function PackingPage({
 
   return (
     <main className="page-shell">
-      <PageHeader description="בחרו חדר ממופה כדי לפתוח ולנהל את יחידות האריזה שלו" title="אריזה" />
+      <PageHeader
+        action={<Link className="button secondary" href="/rooms">מיפוי חדרים</Link>}
+        description="בחרו חדר ממופה כדי לפתוח ולנהל את יחידות האריזה שלו"
+        title="אריזה"
+      />
       {rooms.length === 0 ? (
         <EmptyState
           description="חדרים שנוצרו בקבוצה זו יופיעו כאן לאחר שיוגדרו."
@@ -90,7 +94,7 @@ export default async function PackingPage({
               <>
                 <div>
                   <p className="entity-card-title">{room.name}</p>
-                  <p className="entity-card-meta">{mapped ? "ניתן לפתוח יחידות אריזה" : "יש לסיים את המיפוי"}</p>
+                  <p className="entity-card-meta">{mapped ? "ניתן לפתוח יחידות אריזה" : "יש לסיים את המיפוי בעמוד מיפוי חדרים"}</p>
                 </div>
                 <div className="entity-card-side">
                   <StatusBadge label={statusInfo.label} tone={statusInfo.tone} />

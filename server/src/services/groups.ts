@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull } from "drizzle-orm";
+import { and, asc, count, eq, isNull } from "drizzle-orm";
 
 import { getDb } from "../db";
 import {
@@ -7,6 +7,8 @@ import {
   groupCodes,
   groups,
   memberships,
+  rooms,
+  transports,
 } from "../db/schema";
 import type { Actor } from "../lib/authorization";
 import { safeAuditMetadata } from "../lib/audit";
@@ -28,6 +30,8 @@ export async function listVisibleGroups(actor: Actor) {
         id: groups.id,
         name: groups.name,
         groupCode: groupCodes.code,
+        contactName: groups.contactName,
+        contactPhone: groups.contactPhone,
         createdAt: groups.createdAt,
       })
       .from(groups)
@@ -41,6 +45,8 @@ export async function listVisibleGroups(actor: Actor) {
       id: groups.id,
       name: groups.name,
       groupCode: groupCodes.code,
+      contactName: groups.contactName,
+      contactPhone: groups.contactPhone,
       createdAt: groups.createdAt,
     })
     .from(groups)
@@ -55,6 +61,14 @@ export async function listVisibleGroups(actor: Actor) {
     )
     .where(isNull(groups.archivedAt))
     .orderBy(asc(groups.name));
+}
+
+export async function listGroupCodes() {
+  return getDb()
+    .select({ id: groupCodes.id, code: groupCodes.code, description: groupCodes.description })
+    .from(groupCodes)
+    .where(isNull(groupCodes.archivedAt))
+    .orderBy(asc(groupCodes.code));
 }
 
 export async function createGroup(
@@ -108,4 +122,56 @@ export async function createGroup(
   });
 
   return { id: groupId, ...input, createdAt: occurredAt };
+}
+
+export async function archiveGroup(actor: Actor, groupId: string, requestId: string) {
+  const db = getDb();
+  const [group] = await db
+    .select({ id: groups.id })
+    .from(groups)
+    .where(and(eq(groups.id, groupId), isNull(groups.archivedAt)))
+    .limit(1);
+
+  if (!group) {
+    throw new HttpError(404, "NOT_FOUND", "The requested resource was not found.");
+  }
+
+  const [[roomCount], [transportCount]] = await Promise.all([
+    db
+      .select({ value: count() })
+      .from(rooms)
+      .where(and(eq(rooms.groupId, groupId), isNull(rooms.archivedAt))),
+    db
+      .select({ value: count() })
+      .from(transports)
+      .where(and(eq(transports.groupId, groupId), isNull(transports.archivedAt))),
+  ]);
+
+  if (roomCount.value > 0 || transportCount.value > 0) {
+    throw new HttpError(409, "GROUP_NOT_EMPTY", "לא ניתן למחוק קבוצה שיש בה חדרים או הובלות.");
+  }
+
+  const occurredAt = new Date();
+  await db.transaction(async (transaction) => {
+    await transaction
+      .update(groups)
+      .set({ archivedAt: occurredAt, updatedAt: occurredAt })
+      .where(eq(groups.id, groupId));
+    await transaction
+      .update(memberships)
+      .set({ archivedAt: occurredAt })
+      .where(and(eq(memberships.groupId, groupId), isNull(memberships.archivedAt)));
+    await transaction.insert(auditEvents).values({
+      actorUserId: actor.id,
+      action: "group.archived",
+      entityType: "group",
+      entityId: groupId,
+      groupId,
+      requestId,
+      metadata: {},
+      occurredAt,
+    });
+  });
+
+  return { id: groupId };
 }

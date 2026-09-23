@@ -18,7 +18,8 @@
     "db:generate": "dotenv -e .env.local -- drizzle-kit generate --config server/drizzle.config.ts",
     "db:migrate": "dotenv -e .env.local -- drizzle-kit migrate --config server/drizzle.config.ts",
     "db:studio": "dotenv -e .env.local -- drizzle-kit studio --config server/drizzle.config.ts",
-    "db:seed-catalog": "dotenv -e .env.local -- node server/scripts/seed-catalog.cjs"
+    "db:seed-catalog": "dotenv -e .env.local -- node server/scripts/seed-catalog.cjs",
+    "db:seed-demo": "dotenv -e .env.local -- node server/scripts/seed-demo.cjs"
   },
   "dependencies": {
     "next": "16.3.5"
