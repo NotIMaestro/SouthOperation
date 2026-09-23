@@ -1,10 +1,13 @@
 import { LogIn, ShieldCheck } from "lucide-react";
+import { connection } from "next/server";
 
 import { devBypassEnabled, microsoftEntraIdConfigured, signIn } from "@/auth";
 
 export const metadata = { title: "כניסה מאובטחת" };
 
-export default function SignInPage() {
+export default async function SignInPage() {
+  // Reads the Entra env vars per request; a prerendered page would freeze them at build time.
+  await connection();
   return (
     <main className="auth-shell">
       <section className="auth-card">
