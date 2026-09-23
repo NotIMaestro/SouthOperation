@@ -41,6 +41,7 @@ export function TransportBoard({ groupId, transports }: { groupId: string; trans
   const [packageOverrides, setPackageOverrides] = useState<Record<string, { packageCount: number; packageSummary: string }>>({});
   const [additionalPackageCount, setAdditionalPackageCount] = useState("");
   const [additionalPackageSummary, setAdditionalPackageSummary] = useState("");
+  const [savingPackages, setSavingPackages] = useState(false);
 
   const displayedTransports = transports.map((item) => ({ ...item, ...packageOverrides[item.id] }));
   const selectedTransport = displayedTransports.find((item) => item.id === selectedId) ?? null;
@@ -165,24 +166,40 @@ export function TransportBoard({ groupId, transports }: { groupId: string; trans
     }
   }
 
-  function addPackages() {
+  async function addPackages() {
     if (!selectedTransport || selectedTransport.status !== "waiting") return;
     const count = Number(additionalPackageCount);
     const summary = additionalPackageSummary.trim();
     if (!Number.isInteger(count) || count < 1 || !summary) return;
     if (!window.confirm(`האם אתה בטוח שברצונך להוסיף ${count} חבילות להובלה ${selectedTransport.transportNumber}?`)) return;
 
-    setPackageOverrides((current) => ({
-      ...current,
-      [selectedTransport.id]: {
-        packageCount: selectedTransport.packageCount + count,
-        packageSummary: selectedTransport.packageSummary
-          ? `${selectedTransport.packageSummary}; ${summary}`
-          : summary,
-      },
-    }));
-    setAdditionalPackageCount("");
-    setAdditionalPackageSummary("");
+    setSavingPackages(true);
+    try {
+      const response = await fetch(`/api/v1/transports/${selectedTransport.id}/packages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ packageCount: count, packageSummary: summary }),
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) {
+        setStatusError(payload?.error?.message ?? "הוספת החבילות נכשלה.");
+        return;
+      }
+      setPackageOverrides((current) => ({
+        ...current,
+        [selectedTransport.id]: {
+          packageCount: payload.data.packageCount,
+          packageSummary: payload.data.packageSummary,
+        },
+      }));
+      setAdditionalPackageCount("");
+      setAdditionalPackageSummary("");
+      router.refresh();
+    } catch {
+      setStatusError("לא ניתן להתחבר לשרת.");
+    } finally {
+      setSavingPackages(false);
+    }
   }
 
   return (
@@ -305,8 +322,8 @@ export function TransportBoard({ groupId, transports }: { groupId: string; trans
                     <input onChange={(event) => setAdditionalPackageSummary(event.target.value)} placeholder="לדוגמה: ציוד משרדי" value={additionalPackageSummary} />
                   </label>
                 </div>
-                <button className="button secondary" disabled={!additionalPackageCount || !additionalPackageSummary.trim()} onClick={addPackages} type="button">
-                  <Plus /> הוספת חבילות
+                <button className="button secondary" disabled={savingPackages || !additionalPackageCount || !additionalPackageSummary.trim()} onClick={() => void addPackages()} type="button">
+                  <Plus /> {savingPackages ? "שומר..." : "הוספת חבילות"}
                 </button>
               </div>
             )}

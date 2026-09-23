@@ -36,6 +36,11 @@ export type UpdateTransportStatusInput = {
   vehicleNumber?: string;
 };
 
+export type AddTransportPackagesInput = {
+  packageCount: number;
+  packageSummary: string;
+};
+
 export async function listTransportsForGroup(groupId: string, status?: TransportStatus) {
   return getDb()
     .select()
@@ -179,6 +184,50 @@ export async function updateTransportStatus(
   });
 
   return { id: transportId, status: input.status };
+}
+
+export async function addTransportPackages(
+  actor: Actor,
+  transportId: string,
+  input: AddTransportPackagesInput,
+  requestId: string,
+) {
+  const transport = await loadTransportForGroup(transportId);
+  if (transport.status !== "waiting") {
+    throw new HttpError(409, "TRANSPORT_NOT_WAITING", "ניתן להוסיף חבילות רק להובלה שממתינה לאיסוף.");
+  }
+
+  const occurredAt = new Date();
+  const packageSummary = transport.packageSummary
+    ? `${transport.packageSummary}; ${input.packageSummary.trim()}`
+    : input.packageSummary.trim();
+
+  await getDb().transaction(async (transaction) => {
+    await transaction
+      .update(transports)
+      .set({
+        packageCount: transport.packageCount + input.packageCount,
+        packageSummary,
+        updatedAt: occurredAt,
+      })
+      .where(eq(transports.id, transportId));
+    await transaction.insert(auditEvents).values({
+      actorUserId: actor.id,
+      action: "transport.packages_added",
+      entityType: "transport",
+      entityId: transportId,
+      groupId: transport.groupId,
+      requestId,
+      metadata: { addedCount: input.packageCount, packageSummary: input.packageSummary.trim() },
+      occurredAt,
+    });
+  });
+
+  return {
+    id: transportId,
+    packageCount: transport.packageCount + input.packageCount,
+    packageSummary,
+  };
 }
 
 export async function assignPackingUnitToTransport(

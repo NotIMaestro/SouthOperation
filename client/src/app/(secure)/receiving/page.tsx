@@ -58,7 +58,7 @@ export default async function ReceivingPage({
     );
   }
 
-  const transportsResult = await listTransportsForGroup(activeGroupId, "transit");
+  const transportsResult = await listTransportsForGroup(activeGroupId, "arrived");
   if (!transportsResult.ok) {
     return (
       <main className="page-shell">
@@ -70,9 +70,9 @@ export default async function ReceivingPage({
 
   return (
     <main className="page-shell">
-      <PageHeader title="קבלת חבילות" description="הובלות בדרך ליעד בקבוצה זו. אישור קבלה נועל את ההובלה." />
+      <PageHeader title="קבלת חבילות" description="הובלות שהגיעו ליעדן בקבוצה זו." />
       {transportsResult.data.length === 0 ? (
-        <EmptyState icon={PackageOpen} title="אין חבילות ממתינות לקבלה" description="הובלות שבדרך ליעד יופיעו כאן." />
+        <EmptyState icon={PackageOpen} title="אין חבילות שהגיעו ליעד" description="הובלות במצב הגיע ליעד יופיעו כאן." />
       ) : (
         <ReceivingList transports={transportsResult.data} />
       )}

@@ -97,6 +97,13 @@ export const updateTransportStatusSchema = z
   })
   .strict();
 
+export const addTransportPackagesSchema = z
+  .object({
+    packageCount: z.number().int().positive().max(10_000),
+    packageSummary: z.string().trim().min(1).max(2000),
+  })
+  .strict();
+
 export const assignPackingUnitTransportSchema = z.object({ transportId: z.uuid() }).strict();
 
 export const packingUnitNumberSchema = z
