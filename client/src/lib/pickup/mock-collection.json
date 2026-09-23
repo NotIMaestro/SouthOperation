@@ -1,0 +1,279 @@
+{
+  "users": [
+    {
+      "id": "user-001",
+      "displayName": "משתמש הדגמה א"
+    },
+    {
+      "id": "user-002",
+      "displayName": "משתמש הדגמה ב"
+    }
+  ],
+  "packages": [
+    {
+      "id": "mock-001",
+      "packageNumber": "100001",
+      "qrToken": "PKG:A7F3K9M2",
+      "barcodeValue": "7290001000010",
+      "assignedUserId": "user-001",
+      "description": "ציוד מחשוב לדוגמה",
+      "origin": "מחסן ענבר הבדיוני",
+      "destination": "מרכז אחו הבדיוני",
+      "status": "AWAITING_USER_CONFIRMATION",
+      "products": [
+        {
+          "id": "product-1-1",
+          "name": "מסך לדוגמה",
+          "quantity": 2
+        },
+        {
+          "id": "product-1-2",
+          "name": "מקלדת לדוגמה",
+          "quantity": 3
+        },
+        {
+          "id": "product-1-3",
+          "name": "תחנת עגינה לדוגמה",
+          "quantity": 4
+        }
+      ],
+      "arrivedAt": "2026-09-20T09:30:00Z",
+      "confirmedAt": null,
+      "confirmedByUserId": null
+    },
+    {
+      "id": "mock-002",
+      "packageNumber": "100002",
+      "qrToken": "PKG:B8G4L2N6",
+      "barcodeValue": "7290001000020",
+      "assignedUserId": "user-001",
+      "description": "ציוד משרדי לדוגמה",
+      "origin": "שלוחת ערבה הבדיונית",
+      "destination": "מחסן נחושת הבדיוני",
+      "status": "AWAITING_USER_CONFIRMATION",
+      "products": [
+        {
+          "id": "product-2-1",
+          "name": "מחברות לדוגמה",
+          "quantity": 2
+        },
+        {
+          "id": "product-2-2",
+          "name": "עטים לדוגמה",
+          "quantity": 3
+        }
+      ],
+      "arrivedAt": "2026-09-20T09:30:00Z",
+      "confirmedAt": null,
+      "confirmedByUserId": null
+    },
+    {
+      "id": "mock-003",
+      "packageNumber": "100003",
+      "qrToken": "PKG:C9H5M3P7",
+      "barcodeValue": "7290001000030",
+      "assignedUserId": "user-001",
+      "description": "ערכת פגישות לדוגמה",
+      "origin": "מרכז אחו הבדיוני",
+      "destination": "מחסן ענבר הבדיוני",
+      "status": "AWAITING_USER_CONFIRMATION",
+      "products": [
+        {
+          "id": "product-3-1",
+          "name": "רמקול לדוגמה",
+          "quantity": 2
+        },
+        {
+          "id": "product-3-2",
+          "name": "לוח מחיק לדוגמה",
+          "quantity": 3
+        }
+      ],
+      "arrivedAt": "2026-09-20T09:30:00Z",
+      "confirmedAt": null,
+      "confirmedByUserId": null
+    },
+    {
+      "id": "mock-004",
+      "packageNumber": "100004",
+      "qrToken": "PKG:D2J6N4Q8",
+      "barcodeValue": "7290001000040",
+      "assignedUserId": "user-001",
+      "description": "ארגזי ארכיון לדוגמה",
+      "origin": "מחסן נחושת הבדיוני",
+      "destination": "שלוחת ערבה הבדיונית",
+      "status": "AWAITING_USER_CONFIRMATION",
+      "products": [
+        {
+          "id": "product-4-1",
+          "name": "תיקיות ריקות לדוגמה",
+          "quantity": 2
+        },
+        {
+          "id": "product-4-2",
+          "name": "ארגזי ארכיון ריקים",
+          "quantity": 3
+        }
+      ],
+      "arrivedAt": "2026-09-20T09:30:00Z",
+      "confirmedAt": null,
+      "confirmedByUserId": null
+    },
+    {
+      "id": "mock-005",
+      "packageNumber": "100005",
+      "qrToken": "PKG:E3K7P5R9",
+      "barcodeValue": "7290001000050",
+      "assignedUserId": "user-001",
+      "description": "ערכת תאורה לדוגמה",
+      "origin": "מחסן ענבר הבדיוני",
+      "destination": "שלוחת ערבה הבדיונית",
+      "status": "AWAITING_USER_CONFIRMATION",
+      "products": [
+        {
+          "id": "product-5-1",
+          "name": "מנורות שולחן לדוגמה",
+          "quantity": 2
+        },
+        {
+          "id": "product-5-2",
+          "name": "מארז אביזרים לדוגמה",
+          "quantity": 1
+        }
+      ],
+      "arrivedAt": "2026-09-20T09:30:00Z",
+      "confirmedAt": null,
+      "confirmedByUserId": null
+    },
+    {
+      "id": "mock-006",
+      "packageNumber": "100006",
+      "qrToken": "PKG:F4L8Q6S2",
+      "barcodeValue": "7290001000060",
+      "assignedUserId": "user-001",
+      "description": "מעמד תצוגה לדוגמה",
+      "origin": "מרכז אחו הבדיוני",
+      "destination": "מחסן נחושת הבדיוני",
+      "status": "CONFIRMED_RECEIVED",
+      "products": [
+        {
+          "id": "product-6-1",
+          "name": "מעמד לדוגמה",
+          "quantity": 2
+        },
+        {
+          "id": "product-6-2",
+          "name": "לוחית התקנה לדוגמה",
+          "quantity": 3
+        }
+      ],
+      "arrivedAt": "2026-09-20T09:30:00Z",
+      "confirmedAt": "2026-09-21T10:00:00Z",
+      "confirmedByUserId": "user-001"
+    },
+    {
+      "id": "mock-007",
+      "packageNumber": "100007",
+      "qrToken": "PKG:G5M9R7T3",
+      "barcodeValue": "7290001000070",
+      "assignedUserId": "user-001",
+      "description": "ארגז כבלים לדוגמה",
+      "origin": "שלוחת ערבה הבדיונית",
+      "destination": "מרכז אחו הבדיוני",
+      "status": "CONFIRMED_RECEIVED",
+      "products": [
+        {
+          "id": "product-7-1",
+          "name": "כבלי תצוגה לדוגמה",
+          "quantity": 2
+        },
+        {
+          "id": "product-7-2",
+          "name": "כבלי חשמל לדוגמה",
+          "quantity": 3
+        }
+      ],
+      "arrivedAt": "2026-09-20T09:30:00Z",
+      "confirmedAt": "2026-09-21T10:00:00Z",
+      "confirmedByUserId": "user-001"
+    },
+    {
+      "id": "mock-008",
+      "packageNumber": "100008",
+      "qrToken": "PKG:H6N2S8U4",
+      "barcodeValue": "7290001000080",
+      "assignedUserId": "user-002",
+      "description": "ערכת מדפים לדוגמה",
+      "origin": "מחסן נחושת הבדיוני",
+      "destination": "מחסן ענבר הבדיוני",
+      "status": "AWAITING_USER_CONFIRMATION",
+      "products": [
+        {
+          "id": "product-8-1",
+          "name": "לוחות מדפים לדוגמה",
+          "quantity": 2
+        },
+        {
+          "id": "product-8-2",
+          "name": "תושבות לדוגמה",
+          "quantity": 3
+        }
+      ],
+      "arrivedAt": "2026-09-20T09:30:00Z",
+      "confirmedAt": null,
+      "confirmedByUserId": null
+    },
+    {
+      "id": "mock-009",
+      "packageNumber": "100009",
+      "qrToken": "PKG:J7P3T9V5",
+      "barcodeValue": "7290001000090",
+      "assignedUserId": "user-002",
+      "description": "ערכת קבלת פנים לדוגמה",
+      "origin": "מחסן ענבר הבדיוני",
+      "destination": "מחסן נחושת הבדיוני",
+      "status": "AWAITING_USER_CONFIRMATION",
+      "products": [
+        {
+          "id": "product-9-1",
+          "name": "תגים ריקים לדוגמה",
+          "quantity": 2
+        },
+        {
+          "id": "product-9-2",
+          "name": "שלטים לדוגמה",
+          "quantity": 3
+        }
+      ],
+      "arrivedAt": "2026-09-20T09:30:00Z",
+      "confirmedAt": null,
+      "confirmedByUserId": null
+    },
+    {
+      "id": "mock-010",
+      "packageNumber": "100010",
+      "qrToken": "PKG:K8Q4U2W6",
+      "barcodeValue": "7290001000100",
+      "assignedUserId": "user-002",
+      "description": "חומרי אריזה לדוגמה",
+      "origin": "מרכז אחו הבדיוני",
+      "destination": "שלוחת ערבה הבדיונית",
+      "status": "CONFIRMED_RECEIVED",
+      "products": [
+        {
+          "id": "product-10-1",
+          "name": "קרטונים ריקים לדוגמה",
+          "quantity": 2
+        },
+        {
+          "id": "product-10-2",
+          "name": "סרט אריזה לדוגמה",
+          "quantity": 3
+        }
+      ],
+      "arrivedAt": "2026-09-20T09:30:00Z",
+      "confirmedAt": "2026-09-21T10:00:00Z",
+      "confirmedByUserId": "user-002"
+    }
+  ]
+}

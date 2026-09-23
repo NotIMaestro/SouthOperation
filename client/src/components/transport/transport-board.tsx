@@ -45,8 +45,7 @@ export function TransportBoard({ groupId, transports }: { groupId: string; trans
   const displayedTransports = transports.map((item) => ({ ...item, ...packageOverrides[item.id] }));
   const selectedTransport = displayedTransports.find((item) => item.id === selectedId) ?? null;
 
-  const filteredTransports = useMemo(() => {
-    return displayedTransports.filter((item) => {
+  const filteredTransports = displayedTransports.filter((item) => {
       const searchContent = [
         item.transportNumber,
         item.createdByName,
@@ -62,8 +61,7 @@ export function TransportBoard({ groupId, transports }: { groupId: string; trans
         searchContent.includes(searchTerm.trim().toLowerCase()) &&
         (statusFilter === "all" || item.status === statusFilter)
       );
-    });
-  }, [displayedTransports, searchTerm, statusFilter]);
+  });
 
   const counts = useMemo(
     () => ({

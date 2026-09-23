@@ -1,0 +1,598 @@
+{
+  "transports": [
+    {
+      "id": "TR-024",
+      "title": "הובלת ערכות עבודה לדוגמה",
+      "date": "2026-09-27T14:30",
+      "status": "waiting",
+      "createdBy": "יוצר הדגמה",
+      "sourceCity": "עיר הדגמה א",
+      "sourceUnit": "מרכז מוצא בדיוני",
+      "sourceBuilding": "מבנה הדגמה א",
+      "sourceRoom": "1",
+      "destinationCity": "עיר הדגמה ב",
+      "destinationUnit": "מרכז יעד בדיוני",
+      "destinationBuilding": "מבנה הדגמה ב",
+      "destinationRoom": "2",
+      "packageIds": [
+        "mock-021",
+        "mock-022"
+      ],
+      "packageSummary": "הובלת ערכות עבודה לדוגמה",
+      "assignedReceiverUserId": "user-001",
+      "receiptStatus": "NOT_READY",
+      "actualDeliveryDate": null,
+      "confirmedAt": null,
+      "confirmedByUserId": null
+    },
+    {
+      "id": "TR-023",
+      "title": "הובלת ציוד משרדי לדוגמה",
+      "date": "2026-09-26T08:00",
+      "status": "transit",
+      "createdBy": "יוצר הדגמה",
+      "sourceCity": "עיר הדגמה א",
+      "sourceUnit": "מרכז מוצא בדיוני",
+      "sourceBuilding": "מבנה הדגמה א",
+      "sourceRoom": "1",
+      "destinationCity": "עיר הדגמה ב",
+      "destinationUnit": "מרכז יעד בדיוני",
+      "destinationBuilding": "מבנה הדגמה ב",
+      "destinationRoom": "2",
+      "packageIds": [
+        "mock-023",
+        "mock-024"
+      ],
+      "packageSummary": "הובלת ציוד משרדי לדוגמה",
+      "vehicleType": "משאית",
+      "vehicleNumber": "רכב הדגמה",
+      "assignedReceiverUserId": "user-001",
+      "receiptStatus": "NOT_READY",
+      "actualDeliveryDate": null,
+      "confirmedAt": null,
+      "confirmedByUserId": null
+    },
+    {
+      "id": "TR-022",
+      "title": "הובלת ציוד תצוגה לדוגמה",
+      "date": "2026-09-20T11:00",
+      "status": "arrived",
+      "createdBy": "יוצר הדגמה",
+      "sourceCity": "עיר הדגמה א",
+      "sourceUnit": "מרכז מוצא בדיוני",
+      "sourceBuilding": "מבנה הדגמה א",
+      "sourceRoom": "1",
+      "destinationCity": "עיר הדגמה ב",
+      "destinationUnit": "מרכז יעד בדיוני",
+      "destinationBuilding": "מבנה הדגמה ב",
+      "destinationRoom": "2",
+      "packageIds": [
+        "mock-006",
+        "mock-007"
+      ],
+      "packageSummary": "הובלת ציוד תצוגה לדוגמה",
+      "vehicleType": "משאית",
+      "vehicleNumber": "רכב הדגמה",
+      "assignedReceiverUserId": "user-001",
+      "receiptStatus": "RECEIVED_CONFIRMED",
+      "actualDeliveryDate": "2026-09-20",
+      "confirmedAt": "2026-09-20T11:00:00Z",
+      "confirmedByUserId": "user-001"
+    },
+    {
+      "id": "TR-025",
+      "title": "הובלת ציוד מחשוב ומשרד לדוגמה",
+      "date": "2026-09-23T09:00",
+      "status": "arrived",
+      "createdBy": "יוצר הדגמה",
+      "sourceCity": "עיר הדגמה א",
+      "sourceUnit": "מרכז מוצא בדיוני",
+      "sourceBuilding": "מבנה הדגמה א",
+      "sourceRoom": "1",
+      "destinationCity": "עיר הדגמה ב",
+      "destinationUnit": "מרכז יעד בדיוני",
+      "destinationBuilding": "מבנה הדגמה ב",
+      "destinationRoom": "2",
+      "packageIds": [
+        "mock-001",
+        "mock-002"
+      ],
+      "packageSummary": "הובלת ציוד מחשוב ומשרד לדוגמה",
+      "vehicleType": "משאית",
+      "vehicleNumber": "רכב הדגמה",
+      "assignedReceiverUserId": "user-001",
+      "receiptStatus": "AWAITING_RECEIPT_CONFIRMATION",
+      "actualDeliveryDate": "2026-09-23",
+      "confirmedAt": null,
+      "confirmedByUserId": null
+    },
+    {
+      "id": "TR-026",
+      "title": "הובלת ערכות פגישות וארכיון לדוגמה",
+      "date": "2026-09-23T12:00",
+      "status": "arrived",
+      "createdBy": "יוצר הדגמה",
+      "sourceCity": "עיר הדגמה א",
+      "sourceUnit": "מרכז מוצא בדיוני",
+      "sourceBuilding": "מבנה הדגמה א",
+      "sourceRoom": "1",
+      "destinationCity": "עיר הדגמה ב",
+      "destinationUnit": "מרכז יעד בדיוני",
+      "destinationBuilding": "מבנה הדגמה ב",
+      "destinationRoom": "2",
+      "packageIds": [
+        "mock-003",
+        "mock-004"
+      ],
+      "packageSummary": "הובלת ערכות פגישות וארכיון לדוגמה",
+      "vehicleType": "משאית",
+      "vehicleNumber": "רכב הדגמה",
+      "assignedReceiverUserId": "user-001",
+      "receiptStatus": "AWAITING_RECEIPT_CONFIRMATION",
+      "actualDeliveryDate": "2026-09-23",
+      "confirmedAt": null,
+      "confirmedByUserId": null
+    },
+    {
+      "id": "TR-027",
+      "title": "הובלת תאורה ואביזרים לדוגמה",
+      "date": "2026-09-24T09:30",
+      "status": "arrived",
+      "createdBy": "יוצר הדגמה",
+      "sourceCity": "עיר הדגמה א",
+      "sourceUnit": "מרכז מוצא בדיוני",
+      "sourceBuilding": "מבנה הדגמה א",
+      "sourceRoom": "1",
+      "destinationCity": "עיר הדגמה ב",
+      "destinationUnit": "מרכז יעד בדיוני",
+      "destinationBuilding": "מבנה הדגמה ב",
+      "destinationRoom": "2",
+      "packageIds": [
+        "mock-005",
+        "mock-011"
+      ],
+      "packageSummary": "הובלת תאורה ואביזרים לדוגמה",
+      "vehicleType": "משאית",
+      "vehicleNumber": "רכב הדגמה",
+      "assignedReceiverUserId": "user-001",
+      "receiptStatus": "AWAITING_RECEIPT_CONFIRMATION",
+      "actualDeliveryDate": "2026-09-24",
+      "confirmedAt": null,
+      "confirmedByUserId": null
+    },
+    {
+      "id": "TR-028",
+      "title": "הובלת אביזרי משרד לדוגמה",
+      "date": "2026-09-24T11:00",
+      "status": "arrived",
+      "createdBy": "יוצר הדגמה",
+      "sourceCity": "עיר הדגמה א",
+      "sourceUnit": "מרכז מוצא בדיוני",
+      "sourceBuilding": "מבנה הדגמה א",
+      "sourceRoom": "1",
+      "destinationCity": "עיר הדגמה ב",
+      "destinationUnit": "מרכז יעד בדיוני",
+      "destinationBuilding": "מבנה הדגמה ב",
+      "destinationRoom": "2",
+      "packageIds": [
+        "mock-012",
+        "mock-013"
+      ],
+      "packageSummary": "הובלת אביזרי משרד לדוגמה",
+      "vehicleType": "משאית",
+      "vehicleNumber": "רכב הדגמה",
+      "assignedReceiverUserId": "user-001",
+      "receiptStatus": "AWAITING_RECEIPT_CONFIRMATION",
+      "actualDeliveryDate": "2026-09-24",
+      "confirmedAt": null,
+      "confirmedByUserId": null
+    },
+    {
+      "id": "TR-029",
+      "title": "הובלת מארזי עבודה לדוגמה",
+      "date": "2026-09-25T10:00",
+      "status": "arrived",
+      "createdBy": "יוצר הדגמה",
+      "sourceCity": "עיר הדגמה א",
+      "sourceUnit": "מרכז מוצא בדיוני",
+      "sourceBuilding": "מבנה הדגמה א",
+      "sourceRoom": "1",
+      "destinationCity": "עיר הדגמה ב",
+      "destinationUnit": "מרכז יעד בדיוני",
+      "destinationBuilding": "מבנה הדגמה ב",
+      "destinationRoom": "2",
+      "packageIds": [
+        "mock-014",
+        "mock-015"
+      ],
+      "packageSummary": "הובלת מארזי עבודה לדוגמה",
+      "vehicleType": "משאית",
+      "vehicleNumber": "רכב הדגמה",
+      "assignedReceiverUserId": "user-001",
+      "receiptStatus": "AWAITING_RECEIPT_CONFIRMATION",
+      "actualDeliveryDate": "2026-09-25",
+      "confirmedAt": null,
+      "confirmedByUserId": null
+    },
+    {
+      "id": "TR-030",
+      "title": "הובלת ציוד משלים לדוגמה",
+      "date": "2026-09-25T13:00",
+      "status": "arrived",
+      "createdBy": "יוצר הדגמה",
+      "sourceCity": "עיר הדגמה א",
+      "sourceUnit": "מרכז מוצא בדיוני",
+      "sourceBuilding": "מבנה הדגמה א",
+      "sourceRoom": "1",
+      "destinationCity": "עיר הדגמה ב",
+      "destinationUnit": "מרכז יעד בדיוני",
+      "destinationBuilding": "מבנה הדגמה ב",
+      "destinationRoom": "2",
+      "packageIds": [
+        "mock-016",
+        "mock-017"
+      ],
+      "packageSummary": "הובלת ציוד משלים לדוגמה",
+      "vehicleType": "משאית",
+      "vehicleNumber": "רכב הדגמה",
+      "assignedReceiverUserId": "user-001",
+      "receiptStatus": "AWAITING_RECEIPT_CONFIRMATION",
+      "actualDeliveryDate": "2026-09-25",
+      "confirmedAt": null,
+      "confirmedByUserId": null
+    },
+    {
+      "id": "TR-031",
+      "title": "הובלת מארזי תצוגה לדוגמה",
+      "date": "2026-09-21T10:00",
+      "status": "arrived",
+      "createdBy": "יוצר הדגמה",
+      "sourceCity": "עיר הדגמה א",
+      "sourceUnit": "מרכז מוצא בדיוני",
+      "sourceBuilding": "מבנה הדגמה א",
+      "sourceRoom": "1",
+      "destinationCity": "עיר הדגמה ב",
+      "destinationUnit": "מרכז יעד בדיוני",
+      "destinationBuilding": "מבנה הדגמה ב",
+      "destinationRoom": "2",
+      "packageIds": [
+        "mock-018",
+        "mock-019"
+      ],
+      "packageSummary": "הובלת מארזי תצוגה לדוגמה",
+      "vehicleType": "משאית",
+      "vehicleNumber": "רכב הדגמה",
+      "assignedReceiverUserId": "user-001",
+      "receiptStatus": "RECEIVED_CONFIRMED",
+      "actualDeliveryDate": "2026-09-21",
+      "confirmedAt": "2026-09-21T10:00:00Z",
+      "confirmedByUserId": "user-001"
+    },
+    {
+      "id": "TR-032",
+      "title": "הובלת ערכות משרד לדוגמה",
+      "date": "2026-09-22T10:00",
+      "status": "arrived",
+      "createdBy": "יוצר הדגמה",
+      "sourceCity": "עיר הדגמה א",
+      "sourceUnit": "מרכז מוצא בדיוני",
+      "sourceBuilding": "מבנה הדגמה א",
+      "sourceRoom": "1",
+      "destinationCity": "עיר הדגמה ב",
+      "destinationUnit": "מרכז יעד בדיוני",
+      "destinationBuilding": "מבנה הדגמה ב",
+      "destinationRoom": "2",
+      "packageIds": [
+        "mock-020",
+        "mock-025"
+      ],
+      "packageSummary": "הובלת ערכות משרד לדוגמה",
+      "vehicleType": "משאית",
+      "vehicleNumber": "רכב הדגמה",
+      "assignedReceiverUserId": "user-001",
+      "receiptStatus": "RECEIVED_CONFIRMED",
+      "actualDeliveryDate": "2026-09-22",
+      "confirmedAt": "2026-09-22T10:00:00Z",
+      "confirmedByUserId": "user-001"
+    },
+    {
+      "id": "TR-033",
+      "title": "הובלת הדגמה למשתמש נוסף",
+      "date": "2026-09-23T15:00",
+      "status": "arrived",
+      "createdBy": "יוצר הדגמה",
+      "sourceCity": "עיר הדגמה א",
+      "sourceUnit": "מרכז מוצא בדיוני",
+      "sourceBuilding": "מבנה הדגמה א",
+      "sourceRoom": "1",
+      "destinationCity": "עיר הדגמה ב",
+      "destinationUnit": "מרכז יעד בדיוני",
+      "destinationBuilding": "מבנה הדגמה ב",
+      "destinationRoom": "2",
+      "packageIds": [
+        "mock-008",
+        "mock-009"
+      ],
+      "packageSummary": "הובלת הדגמה למשתמש נוסף",
+      "vehicleType": "משאית",
+      "vehicleNumber": "רכב הדגמה",
+      "assignedReceiverUserId": "user-002",
+      "receiptStatus": "AWAITING_RECEIPT_CONFIRMATION",
+      "actualDeliveryDate": "2026-09-23",
+      "confirmedAt": null,
+      "confirmedByUserId": null
+    }
+  ],
+  "packages": [
+    {
+      "id": "mock-011",
+      "packageNumber": "100011",
+      "description": "ערכת אביזרים לדוגמה 11",
+      "assignedUserId": "user-001",
+      "products": [
+        {
+          "id": "product-11-1",
+          "name": "אביזר משרדי לדוגמה",
+          "quantity": 2
+        },
+        {
+          "id": "product-11-2",
+          "name": "מארז כבלים לדוגמה",
+          "quantity": 3
+        }
+      ]
+    },
+    {
+      "id": "mock-012",
+      "packageNumber": "100012",
+      "description": "ערכת אביזרים לדוגמה 12",
+      "assignedUserId": "user-001",
+      "products": [
+        {
+          "id": "product-12-1",
+          "name": "אביזר משרדי לדוגמה",
+          "quantity": 2
+        },
+        {
+          "id": "product-12-2",
+          "name": "מארז כבלים לדוגמה",
+          "quantity": 3
+        }
+      ]
+    },
+    {
+      "id": "mock-013",
+      "packageNumber": "100013",
+      "description": "ערכת אביזרים לדוגמה 13",
+      "assignedUserId": "user-001",
+      "products": [
+        {
+          "id": "product-13-1",
+          "name": "אביזר משרדי לדוגמה",
+          "quantity": 2
+        },
+        {
+          "id": "product-13-2",
+          "name": "מארז כבלים לדוגמה",
+          "quantity": 3
+        }
+      ]
+    },
+    {
+      "id": "mock-014",
+      "packageNumber": "100014",
+      "description": "ערכת אביזרים לדוגמה 14",
+      "assignedUserId": "user-001",
+      "products": [
+        {
+          "id": "product-14-1",
+          "name": "אביזר משרדי לדוגמה",
+          "quantity": 2
+        },
+        {
+          "id": "product-14-2",
+          "name": "מארז כבלים לדוגמה",
+          "quantity": 3
+        }
+      ]
+    },
+    {
+      "id": "mock-015",
+      "packageNumber": "100015",
+      "description": "ערכת אביזרים לדוגמה 15",
+      "assignedUserId": "user-001",
+      "products": [
+        {
+          "id": "product-15-1",
+          "name": "אביזר משרדי לדוגמה",
+          "quantity": 2
+        },
+        {
+          "id": "product-15-2",
+          "name": "מארז כבלים לדוגמה",
+          "quantity": 3
+        }
+      ]
+    },
+    {
+      "id": "mock-016",
+      "packageNumber": "100016",
+      "description": "ערכת אביזרים לדוגמה 16",
+      "assignedUserId": "user-001",
+      "products": [
+        {
+          "id": "product-16-1",
+          "name": "אביזר משרדי לדוגמה",
+          "quantity": 2
+        },
+        {
+          "id": "product-16-2",
+          "name": "מארז כבלים לדוגמה",
+          "quantity": 3
+        }
+      ]
+    },
+    {
+      "id": "mock-017",
+      "packageNumber": "100017",
+      "description": "ערכת אביזרים לדוגמה 17",
+      "assignedUserId": "user-001",
+      "products": [
+        {
+          "id": "product-17-1",
+          "name": "אביזר משרדי לדוגמה",
+          "quantity": 2
+        },
+        {
+          "id": "product-17-2",
+          "name": "מארז כבלים לדוגמה",
+          "quantity": 3
+        }
+      ]
+    },
+    {
+      "id": "mock-018",
+      "packageNumber": "100018",
+      "description": "ערכת אביזרים לדוגמה 18",
+      "assignedUserId": "user-001",
+      "products": [
+        {
+          "id": "product-18-1",
+          "name": "אביזר משרדי לדוגמה",
+          "quantity": 2
+        },
+        {
+          "id": "product-18-2",
+          "name": "מארז כבלים לדוגמה",
+          "quantity": 3
+        }
+      ]
+    },
+    {
+      "id": "mock-019",
+      "packageNumber": "100019",
+      "description": "ערכת אביזרים לדוגמה 19",
+      "assignedUserId": "user-001",
+      "products": [
+        {
+          "id": "product-19-1",
+          "name": "אביזר משרדי לדוגמה",
+          "quantity": 2
+        },
+        {
+          "id": "product-19-2",
+          "name": "מארז כבלים לדוגמה",
+          "quantity": 3
+        }
+      ]
+    },
+    {
+      "id": "mock-020",
+      "packageNumber": "100020",
+      "description": "ערכת אביזרים לדוגמה 20",
+      "assignedUserId": "user-001",
+      "products": [
+        {
+          "id": "product-20-1",
+          "name": "אביזר משרדי לדוגמה",
+          "quantity": 2
+        },
+        {
+          "id": "product-20-2",
+          "name": "מארז כבלים לדוגמה",
+          "quantity": 3
+        }
+      ]
+    },
+    {
+      "id": "mock-021",
+      "packageNumber": "100021",
+      "description": "ערכת אביזרים לדוגמה 21",
+      "assignedUserId": "user-001",
+      "products": [
+        {
+          "id": "product-21-1",
+          "name": "אביזר משרדי לדוגמה",
+          "quantity": 2
+        },
+        {
+          "id": "product-21-2",
+          "name": "מארז כבלים לדוגמה",
+          "quantity": 3
+        }
+      ]
+    },
+    {
+      "id": "mock-022",
+      "packageNumber": "100022",
+      "description": "ערכת אביזרים לדוגמה 22",
+      "assignedUserId": "user-001",
+      "products": [
+        {
+          "id": "product-22-1",
+          "name": "אביזר משרדי לדוגמה",
+          "quantity": 2
+        },
+        {
+          "id": "product-22-2",
+          "name": "מארז כבלים לדוגמה",
+          "quantity": 3
+        }
+      ]
+    },
+    {
+      "id": "mock-023",
+      "packageNumber": "100023",
+      "description": "ערכת אביזרים לדוגמה 23",
+      "assignedUserId": "user-001",
+      "products": [
+        {
+          "id": "product-23-1",
+          "name": "אביזר משרדי לדוגמה",
+          "quantity": 2
+        },
+        {
+          "id": "product-23-2",
+          "name": "מארז כבלים לדוגמה",
+          "quantity": 3
+        }
+      ]
+    },
+    {
+      "id": "mock-024",
+      "packageNumber": "100024",
+      "description": "ערכת אביזרים לדוגמה 24",
+      "assignedUserId": "user-001",
+      "products": [
+        {
+          "id": "product-24-1",
+          "name": "אביזר משרדי לדוגמה",
+          "quantity": 2
+        },
+        {
+          "id": "product-24-2",
+          "name": "מארז כבלים לדוגמה",
+          "quantity": 3
+        }
+      ]
+    },
+    {
+      "id": "mock-025",
+      "packageNumber": "100025",
+      "description": "ערכת אביזרים לדוגמה 25",
+      "assignedUserId": "user-001",
+      "products": [
+        {
+          "id": "product-25-1",
+          "name": "אביזר משרדי לדוגמה",
+          "quantity": 2
+        },
+        {
+          "id": "product-25-2",
+          "name": "מארז כבלים לדוגמה",
+          "quantity": 3
+        }
+      ]
+    }
+  ]
+}

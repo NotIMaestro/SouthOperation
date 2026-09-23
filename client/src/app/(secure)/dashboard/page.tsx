@@ -5,7 +5,6 @@ import {
   Building2,
   ClipboardCheck,
   PackageCheck,
-  PackageOpen,
   TimerReset,
   Truck,
 } from "lucide-react";
@@ -17,8 +16,8 @@ import { getDashboardMetrics } from "@/lib/server-api";
 const primaryTiles = [
   { href: "/packing", label: "אריזה", sub: "אריזת ציוד מחדר", icon: PackageCheck, tone: "tile-red" },
   { href: "/transport", label: "הובלה", sub: "העמסה על רכב", icon: Truck, tone: "tile-blue" },
-  { href: "/receiving", label: "קבלת ציוד", sub: "פריקת הובלה", icon: PackageOpen, tone: "tile-teal" },
-  { href: "/pickup", label: "איסוף ציוד", sub: "לחדרי היעד", icon: PackageCheck, tone: "tile-orange" },
+  { href: "/receiving", label: "קבלת הובלות", sub: "פריקת הובלה", icon: Truck, tone: "tile-teal" },
+  { href: "/pickup", label: "איסוף חבילות", sub: "לחדרי היעד", icon: PackageCheck, tone: "tile-orange" },
 ];
 
 const secondaryTiles = [
@@ -75,6 +74,7 @@ export default async function DashboardPage() {
             <div className="panel-heading"><div><h2>פעולות מהירות</h2><p>קיצורי דרך לתהליכים נפוצים</p></div></div>
             <Link href="/groups">צפייה בקבוצות <ArrowUpLeft /></Link>
             <Link href="/reports">פתיחת דוחות מיפוי <ArrowUpLeft /></Link>
+            <Link href="/receiving">קבלת הובלות <Truck /></Link>
             <Link href="/audit">בדיקת יומן ביקורת <ArrowUpLeft /></Link>
           </article>
         </section>

@@ -2,7 +2,7 @@ import {
   Menu,
   LogOut,
   PackageCheck,
-  PackageOpen,
+  QrCode,
   ScanLine,
   ShieldCheck,
   Truck,
@@ -20,7 +20,7 @@ import { NavigationLink } from "./navigation-link";
 const links = [
   { href: "/packing", label: "אריזת חבילות", icon: PackageCheck },
   { href: "/transport", label: "הובלת חבילות", icon: Truck },
-  { href: "/receiving", label: "קבלת חבילות", icon: PackageOpen },
+  { href: "/receiving", label: "קבלת הובלות", icon: Truck },
   { href: "/pickup", label: "איסוף חבילות", icon: PackageCheck },
 ];
 
@@ -63,6 +63,8 @@ function Navigation() {
       <NavigationLink href={href} key={href}><Icon aria-hidden="true" /><span>{label}</span></NavigationLink>
     ))}
     <NavigationLink href="/scan-package"><ScanLine aria-hidden="true" /><span>סריקת יחידת אריזה</span></NavigationLink>
+    <span className="nav-section-label">פיתוח / הדגמה</span>
+    <NavigationLink href="/demo/qr-generator"><QrCode aria-hidden="true" /><span>מחולל קודי QR</span></NavigationLink>
   </>;
 }
 
