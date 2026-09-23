@@ -26,6 +26,13 @@
     {
       "idx": 3,
       "version": "7",
+      "when": 1790160000000,
+      "tag": "0003_pending_user_access",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
       "when": 1790160060000,
       "tag": "0004_transport_receipt_and_pickup",
       "breakpoints": true

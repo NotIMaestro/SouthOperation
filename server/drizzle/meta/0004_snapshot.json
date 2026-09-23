@@ -2288,6 +2288,7 @@
       "name": "user_role",
       "schema": "public",
       "values": [
+        "pending",
         "admin",
         "manager",
         "commander",

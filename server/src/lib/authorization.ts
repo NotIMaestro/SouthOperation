@@ -1,7 +1,7 @@
 import { and, eq, isNull, or } from "drizzle-orm";
 
 import { getDb } from "../db";
-import { memberships, users, type MembershipRole, type UserRole } from "../db/schema";
+import { auditEvents, groups, memberships, users, type MembershipRole, type UserRole } from "../db/schema";
 import { HttpError } from "./errors";
 
 export type Actor = {
@@ -24,7 +24,8 @@ export async function provisionEnterpriseUser(input: {
   subject: string;
   email: string;
   displayName: string;
-  role: UserRole;
+  initialRole: UserRole;
+  bootstrapAdmin?: boolean;
 }) {
   const db = getDb();
   const [existingUser] = await db
@@ -45,7 +46,7 @@ export async function provisionEnterpriseUser(input: {
           externalSubject: input.subject,
           email: input.email,
           displayName: input.displayName,
-          role: input.role,
+          ...(input.bootstrapAdmin ? { role: "admin" as const } : {}),
           updatedAt: new Date(),
         })
         .where(eq(users.id, existingUser.id))
@@ -56,11 +57,93 @@ export async function provisionEnterpriseUser(input: {
           externalSubject: input.subject,
           email: input.email,
           displayName: input.displayName,
-          role: input.role,
+          role: input.initialRole,
         })
         .returning({ id: users.id, isActive: users.isActive });
 
   return user?.isActive ? { id: user.id } : undefined;
+}
+
+/** Admin-only callers use this to locate Entra-provisioned accounts for assignment. */
+export async function listUsersForAdministration() {
+  return getDb()
+    .select({
+      id: users.id,
+      email: users.email,
+      displayName: users.displayName,
+      role: users.role,
+      isActive: users.isActive,
+      createdAt: users.createdAt,
+    })
+    .from(users)
+    .where(eq(users.isActive, true))
+    .orderBy(users.displayName);
+}
+
+export async function setUserRole(
+  actor: Actor,
+  userId: string,
+  role: UserRole,
+  requestId: string,
+) {
+  if (actor.id === userId) {
+    throw new HttpError(400, "SELF_ROLE_CHANGE", "You cannot change your own role.");
+  }
+
+  const db = getDb();
+  const [user] = await db
+    .update(users)
+    .set({ role, updatedAt: new Date() })
+    .where(eq(users.id, userId))
+    .returning({ id: users.id, role: users.role });
+
+  if (!user) throw new HttpError(404, "NOT_FOUND", "The requested user was not found.");
+
+  await db.insert(auditEvents).values({
+    actorUserId: actor.id,
+    action: "user.role_changed",
+    entityType: "user",
+    entityId: user.id,
+    requestId,
+    metadata: { role },
+    occurredAt: new Date(),
+  });
+  return user;
+}
+
+export async function assignUserToGroup(
+  actor: Actor,
+  userId: string,
+  groupId: string,
+  role: MembershipRole,
+  requestId: string,
+) {
+  const db = getDb();
+  const [[user], [group]] = await Promise.all([
+    db.select({ id: users.id }).from(users).where(and(eq(users.id, userId), eq(users.isActive, true))).limit(1),
+    db.select({ id: groups.id }).from(groups).where(and(eq(groups.id, groupId), isNull(groups.archivedAt))).limit(1),
+  ]);
+  if (!user || !group) throw new HttpError(404, "NOT_FOUND", "The requested resource was not found.");
+
+  await db.transaction(async (transaction) => {
+    await transaction
+      .insert(memberships)
+      .values({ userId, groupId, role, assignedBy: actor.id, archivedAt: null })
+      .onConflictDoUpdate({
+        target: [memberships.userId, memberships.groupId],
+        set: { role, assignedBy: actor.id, assignedAt: new Date(), archivedAt: null },
+      });
+    await transaction.insert(auditEvents).values({
+      actorUserId: actor.id,
+      action: "membership.assigned",
+      entityType: "membership",
+      entityId: userId,
+      groupId,
+      requestId,
+      metadata: { role },
+      occurredAt: new Date(),
+    });
+  });
 }
 
 export async function requireActor(userId: string | undefined): Promise<Actor> {
