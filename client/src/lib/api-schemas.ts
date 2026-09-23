@@ -2,6 +2,9 @@ import { z } from "zod";
 
 export const uuidSchema = z.uuid();
 
+export const userRoleSchema = z.enum(["pending", "admin", "manager", "commander", "operator"]);
+export const membershipRoleSchema = z.enum(["manager", "commander", "operator"]);
+
 export const createGroupSchema = z
   .object({
     groupCodeId: z.uuid(),

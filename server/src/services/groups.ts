@@ -19,6 +19,14 @@ export type CreateGroupInput = {
   contactPhone?: string;
 };
 
+export async function listActiveGroupCodes() {
+  return getDb()
+    .select({ id: groupCodes.id, code: groupCodes.code, description: groupCodes.description })
+    .from(groupCodes)
+    .where(isNull(groupCodes.archivedAt))
+    .orderBy(asc(groupCodes.code));
+}
+
 export async function listVisibleGroups(actor: Actor) {
   const db = getDb();
 

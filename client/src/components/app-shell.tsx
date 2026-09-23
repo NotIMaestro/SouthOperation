@@ -26,7 +26,7 @@ const links = [
 
 const managementLinks = [
   { href: "/package-status", label: "סטטוס חבילות משוייכות", icon: PackageCheck },
-  { href: "/memberships", label: "הצגת בכירים", icon: Waypoints },
+  { href: "/memberships", label: "ניהול משתמשים", icon: Waypoints },
   { href: "/logistics", label: "הצגת לוגיסטיקה", icon: Waypoints },
 ];
 

@@ -3,7 +3,7 @@ import type { Provider } from "next-auth/providers";
 import Credentials from "next-auth/providers/credentials";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 
-import { provisionEnterpriseUser } from "@/lib/server-api";
+import { provisionEnterpriseUser } from "@south-operation/server/authorization";
 
 export const microsoftEntraIdConfigured = Boolean(
   process.env.AUTH_MICROSOFT_ENTRA_ID_ID &&
@@ -38,11 +38,15 @@ async function provisionEntraUser(
   const email = profile.email ?? profile.preferred_username ?? fallbackUser.email;
   if (!subject || !email) return undefined;
 
+  const bootstrapAdminEmail = process.env.AUTH_BOOTSTRAP_ADMIN_EMAIL?.trim().toLowerCase();
+  const isBootstrapAdmin = Boolean(bootstrapAdminEmail && email.toLowerCase() === bootstrapAdminEmail);
+
   return provisionEnterpriseUser({
     subject,
     email,
     displayName: profile.name?.trim() || fallbackUser.name?.trim() || email,
-    role: "operator",
+    initialRole: isBootstrapAdmin ? "admin" : "pending",
+    bootstrapAdmin: isBootstrapAdmin,
   });
 }
 
